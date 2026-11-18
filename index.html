@@ -38,38 +38,76 @@
       </defs>
       <circle cx="320" cy="120" r="110" fill="#fff" opacity=".35"/>
       <circle cx="70" cy="90" r="60" fill="#fff" opacity=".25"/>
-      <ellipse cx="230" cy="300" rx="190" ry="22" fill="#2D4B33" opacity=".18"/>
-      <!-- big box back right -->
-      <g transform="translate(250 150)">
-        <rect width="120" height="140" rx="4" fill="url(#kard)"/><rect x="52" width="16" height="140" fill="#E8C994" opacity=".8"/>
-        <path d="M0 0 L-14 -22 L106 -22 L120 0Z" fill="#C99558"/><path d="M120 0 L134 -22 L134 118 L120 140Z" fill="#A9763F"/>
-        <rect x="14" y="96" width="34" height="22" rx="2" fill="#fff" opacity=".85"/><path d="M20 103h22M20 110h14" stroke="#B8844C" stroke-width="2.5" stroke-linecap="round"/>
+      <defs>
+        <linearGradient id="kF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DDAE72"/><stop offset=".55" stop-color="#CC9A5C"/><stop offset="1" stop-color="#B9844A"/></linearGradient>
+        <linearGradient id="kS" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#A8723F"/><stop offset="1" stop-color="#8A5B30"/></linearGradient>
+        <linearGradient id="kT" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#E6BD84"/><stop offset="1" stop-color="#D3A267"/></linearGradient>
+        <linearGradient id="kIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6E4523"/><stop offset="1" stop-color="#94643A"/></linearGradient>
+        <linearGradient id="kFlap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C4925A"/><stop offset="1" stop-color="#E0B47A"/></linearGradient>
+        <linearGradient id="tape" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F1DDB3" stop-opacity=".75"/><stop offset=".5" stop-color="#FFF4DA" stop-opacity=".9"/><stop offset="1" stop-color="#EBD3A2" stop-opacity=".75"/></linearGradient>
+        <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="4" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .08  0 0 0 .22 0" result="c"/><feComposite in="c" in2="SourceGraphic" operator="in" result="t"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge></filter>
+        <filter id="soft" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
+      </defs>
+      <!-- shadows -->
+      <ellipse cx="322" cy="292" rx="78" ry="12" fill="#1F3A26" opacity=".35" filter="url(#soft)"/>
+      <ellipse cx="190" cy="312" rx="86" ry="12" fill="#1F3A26" opacity=".35" filter="url(#soft)"/>
+      <ellipse cx="312" cy="328" rx="58" ry="9" fill="#1F3A26" opacity=".3" filter="url(#soft)"/>
+
+      <!-- BIG closed box -->
+      <g filter="url(#grain)">
+        <path d="M250 150 H370 V290 H250Z" fill="url(#kF)"/>
+        <path d="M370 150 L394 130 V270 L370 290Z" fill="url(#kS)"/>
+        <path d="M250 150 L274 130 H394 L370 150Z" fill="url(#kT)"/>
       </g>
+      <path d="M302 150 L326 130 H342 L318 150Z" fill="url(#tape)"/>
+      <rect x="302" y="150" width="16" height="64" fill="url(#tape)"/>
+      <path d="M302 214 l4 -3 l4 3 l4 -3 l4 3" stroke="#EBD3A2" stroke-width="1.2" fill="none" opacity=".9"/>
+      <path d="M250 150 H370 L394 130" stroke="#F0CC96" stroke-width="1.2" fill="none" opacity=".8"/>
+      <path d="M370 150 V290" stroke="#7A4E28" stroke-width="1" opacity=".5"/>
+      <rect x="262" y="226" width="44" height="30" rx="2" fill="#FBF7EE"/><path d="M268 234 h30 M268 241 h22 M268 248 h26" stroke="#B9A88C" stroke-width="2" stroke-linecap="round"/>
+      <g stroke="#7A4E28" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".55"><path d="M342 266 v-16 m-5 5 l5 -5 l5 5"/><path d="M356 266 v-16 m-5 5 l5 -5 l5 5"/><path d="M336 272 h26"/></g>
+
       <!-- plant on big box -->
-      <g transform="translate(300 64)">
-        <path d="M-14 58 h28 l-4 30 h-20z" fill="#E9783B"/><path d="M0 58 C-4 30 -26 26 -30 6 C-8 10 0 30 0 58Z" fill="#4F8A4E"/><path d="M0 58 C4 26 22 18 30 0 C30 22 10 34 0 58Z" fill="#6FA85F"/><path d="M0 58 C0 36 2 20 0 4 C8 22 6 40 0 58Z" fill="#3B6645"/>
+      <g transform="translate(320 48)">
+        <path d="M-15 62 h30 l-4 28 h-22z" fill="#D9682E"/><rect x="-17" y="58" width="34" height="7" rx="2" fill="#E9783B"/>
+        <path d="M0 58 C-4 30 -26 26 -30 6 C-8 10 0 30 0 58Z" fill="#4F8A4E"/><path d="M0 58 C4 26 22 18 30 0 C30 22 10 34 0 58Z" fill="#6FA85F"/><path d="M0 58 C0 36 2 20 0 4 C8 22 6 40 0 58Z" fill="#3B6645"/>
       </g>
-      <!-- open box front left with books -->
-      <g transform="translate(118 214)">
-        <rect x="18" y="-38" width="22" height="58" rx="2" fill="#2F6690" transform="rotate(-8 29 -9)"/>
-        <rect x="42" y="-46" width="20" height="66" rx="2" fill="#E9783B"/>
-        <rect x="64" y="-34" width="24" height="54" rx="2" fill="#F2C14E" transform="rotate(6 76 -7)"/>
-        <rect x="90" y="-26" width="18" height="46" rx="2" fill="#2D4B33"/>
-        <rect width="128" height="96" rx="4" fill="url(#kard)"/>
-        <path d="M0 0 L-22 -18 L18 -24 L28 0Z" fill="#C99558"/><path d="M128 0 L150 -16 L112 -24 L100 0Z" fill="#C99558"/>
-        <path d="M128 0 L146 -10 V80 L128 96Z" fill="#A9763F"/>
-        <path d="M42 46 l10 -10 l10 10 m-10 -10 v26" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>
+
+      <!-- OPEN box with books -->
+      <path d="M136 200 H264 L258 168 H142Z" fill="url(#kFlap)" filter="url(#grain)"/>
+      <path d="M118 214 L136 200 H264 L246 214Z" fill="url(#kIn)"/>
+      <g>
+        <rect x="140" y="160" width="22" height="58" rx="2" fill="#2F6690" transform="rotate(-8 151 189)"/><rect x="143" y="168" width="16" height="3" fill="#fff" opacity=".5" transform="rotate(-8 151 189)"/>
+        <rect x="164" y="152" width="20" height="66" rx="2" fill="#E9783B"/><rect x="167" y="160" width="14" height="3" fill="#fff" opacity=".5"/>
+        <rect x="186" y="164" width="24" height="54" rx="2" fill="#F2C14E" transform="rotate(6 198 191)"/>
+        <rect x="212" y="172" width="18" height="46" rx="2" fill="#2D4B33"/>
       </g>
+      <g filter="url(#grain)">
+        <path d="M118 214 H246 V310 H118Z" fill="url(#kF)"/>
+        <path d="M246 214 L264 200 V296 L246 310Z" fill="url(#kS)"/>
+        <path d="M118 214 L136 200 L108 182 L90 196Z" fill="url(#kFlap)"/>
+        <path d="M246 214 L264 200 L292 212 L274 226Z" fill="url(#kT)"/>
+      </g>
+      <path d="M118 214 H246" stroke="#F0CC96" stroke-width="1.4"/>
+      <path d="M246 214 V310" stroke="#7A4E28" stroke-width="1" opacity=".5"/>
+      <path d="M118 236 H246" stroke="#B07B43" stroke-width="1" opacity=".5"/>
+      <g fill="none" stroke="#7A4E28" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".5"><path d="M170 270 a12 12 0 1 1 22 -6"/><path d="M190 256 l2 8 l-8 1"/></g>
+      <text x="200" y="296" font-family="Poppins,sans-serif" font-size="9" font-weight="700" fill="#7A4E28" opacity=".55" text-anchor="middle" letter-spacing="1.5">REUSE</text>
+
       <!-- lamp -->
-      <g transform="translate(72 168)" stroke-linecap="round">
+      <g transform="translate(62 168)" stroke-linecap="round">
         <path d="M0 140 h40" stroke="#2D4B33" stroke-width="6"/><path d="M20 140 L8 92 L34 56" stroke="#2D4B33" stroke-width="5" fill="none"/>
         <path d="M24 44 L52 40 L52 70Z" fill="#F2C14E"/><circle cx="50" cy="66" r="10" fill="#FFF3C4" opacity=".7"/>
       </g>
-      <!-- small box with shirt -->
-      <g transform="translate(262 272)">
-        <rect width="86" height="54" rx="4" fill="#C99558"/><rect x="36" width="14" height="54" fill="#E8C994" opacity=".8"/>
-        <path d="M14 -2 l12 -10 h8 a8 6 0 0 0 16 0 h8 l12 10 l-6 10 h-6 v-8 h-38 v8 h-6z" fill="#fff"/>
+
+      <!-- SMALL box with shirt -->
+      <g filter="url(#grain)">
+        <path d="M270 282 H350 V330 H270Z" fill="url(#kF)"/>
+        <path d="M350 282 L364 270 V318 L350 330Z" fill="url(#kS)"/>
+        <path d="M270 282 L284 270 H364 L350 282Z" fill="url(#kT)"/>
       </g>
+      <rect x="303" y="282" width="12" height="48" fill="url(#tape)"/>
+      <path d="M288 276 l10 -9 h7 a7 5 0 0 0 14 0 h7 l10 9 l-5 7 h-5 v-5 h-33 v5 h-5z" fill="#FFFFFF" stroke="#E2E6E0"/>
       <!-- calculator -->
       <g transform="translate(218 300) rotate(-10)"><rect width="38" height="54" rx="6" fill="#273A2C"/><rect x="5" y="6" width="28" height="12" rx="2" fill="#BCDCAB"/><g fill="#7C8E80"><circle cx="11" cy="26" r="3"/><circle cx="19" cy="26" r="3"/><circle cx="27" cy="26" r="3"/><circle cx="11" cy="35" r="3"/><circle cx="19" cy="35" r="3"/><circle cx="27" cy="35" r="3"/><circle cx="11" cy="44" r="3"/><circle cx="19" cy="44" r="3"/><circle cx="27" cy="44" r="3" fill="#E9783B"/></g></g>
       <!-- price tag -->
@@ -92,7 +130,7 @@
     <div class="lp-photo lp-illus"><svg viewBox="0 0 300 220" aria-hidden="true">
       <rect width="300" height="220" rx="8" fill="#EAF4E3"/><circle cx="230" cy="60" r="38" fill="#fff" opacity=".7"/>
       <path d="M0 176 Q150 150 300 176 V220 H0Z" fill="#CFE5C2"/>
-      <g transform="translate(40 92)"><rect width="96" height="78" rx="4" fill="#D9A86C"/><rect x="40" width="16" height="78" fill="#E8C994"/><path d="M0 0 L-12 -16 L84 -16 L96 0Z" fill="#C99558"/><path d="M30 44 c0-8 12-8 12 0 c0-8 12-8 12 0 c0 8-12 16-12 16 s-12-8-12-16z" fill="#E9783B"/></g>
+      <g transform="translate(40 92)"><ellipse cx="54" cy="80" rx="62" ry="7" fill="#1F3A26" opacity=".25" filter="url(#soft)"/><g filter="url(#grain)"><rect width="96" height="78" fill="url(#kF)"/><path d="M96 0 L112 -14 V64 L96 78Z" fill="url(#kS)"/><path d="M0 0 L16 -14 H112 L96 0Z" fill="url(#kT)"/></g><path d="M40 0 L56 -14 H70 L54 0Z" fill="url(#tape)"/><rect x="40" width="14" height="40" fill="url(#tape)"/><path d="M30 44 c0-8 12-8 12 0 c0-8 12-8 12 0 c0 8-12 16-12 16 s-12-8-12-16z" fill="#E9783B"/></g>
       <g transform="translate(166 70)"><rect width="22" height="100" rx="3" fill="#2F6690"/><rect x="24" y="10" width="20" height="90" rx="3" fill="#F2C14E"/><rect x="46" y="22" width="26" height="78" rx="3" fill="#3B6645"/><rect x="74" y="4" width="18" height="96" rx="3" fill="#E9783B"/></g>
       <path d="M150 40 a26 26 0 1 1 -8 -18" stroke="#3B6645" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M146 12 l-4 12 l12 1" stroke="#3B6645" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </svg><span class="lp-stamp"><span data-ic="cycle"></span>ReUse</span></div>
@@ -107,7 +145,7 @@
     <h2>3 cara pakai ReUse</h2>
     <div class="lp-cards">
       <article><svg viewBox="0 0 160 100"><rect width="160" height="100" fill="#E5F1DC"/><g transform="translate(30 22)"><rect width="18" height="62" rx="2" fill="#2F6690"/><rect x="20" y="8" width="16" height="54" rx="2" fill="#F2C14E"/><rect x="38" y="2" width="20" height="60" rx="2" fill="#3B6645"/></g><g transform="translate(88 30) rotate(12)"><path d="M0 0 h44 l12 14 l-12 14 h-44z" fill="#fff"/><circle cx="46" cy="14" r="3.5" fill="#BCDCAB"/><text x="6" y="19" font-family="Poppins,sans-serif" font-size="11" font-weight="700" fill="#2D4B33">Rp</text></g></svg><div><h3>Sell</h3><p>Jual barang dengan harga pantas, dapat uang tambahan.</p></div></article>
-      <article><svg viewBox="0 0 160 100"><rect width="160" height="100" fill="#E1ECF4"/><g transform="translate(22 34)"><rect width="38" height="52" rx="6" fill="#273A2C"/><rect x="5" y="6" width="28" height="11" rx="2" fill="#BCDCAB"/></g><g transform="translate(100 30)"><path d="M0 28 L30 14 L60 28 L30 42Z" fill="#D9A86C"/><path d="M0 28 V52 L30 66 V42Z" fill="#C99558"/><path d="M60 28 V52 L30 66 V42Z" fill="#A9763F"/></g><path d="M66 40 h26 m-8 -7 l8 7 l-8 7" stroke="#2F6690" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M92 64 h-26 m8 -7 l-8 7 l8 7" stroke="#2F6690" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h3>Swap</h3><p>Tukar barang dengan yang lebih kamu butuhkan.</p></div></article>
+      <article><svg viewBox="0 0 160 100"><rect width="160" height="100" fill="#E1ECF4"/><g transform="translate(22 34)"><rect width="38" height="52" rx="6" fill="#273A2C"/><rect x="5" y="6" width="28" height="11" rx="2" fill="#BCDCAB"/></g><g transform="translate(100 30)" filter="url(#grain)"><path d="M0 28 L30 14 L60 28 L30 42Z" fill="url(#kT)"/><path d="M0 28 V52 L30 66 V42Z" fill="url(#kF)"/><path d="M60 28 V52 L30 66 V42Z" fill="url(#kS)"/><path d="M12 22 L42 36 L48 33 L18 19Z" fill="url(#tape)"/></g><path d="M66 40 h26 m-8 -7 l8 7 l-8 7" stroke="#2F6690" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M92 64 h-26 m8 -7 l-8 7 l8 7" stroke="#2F6690" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h3>Swap</h3><p>Tukar barang dengan yang lebih kamu butuhkan.</p></div></article>
       <article><svg viewBox="0 0 160 100"><rect width="160" height="100" fill="#FBEFE6"/><g transform="translate(52 34)"><rect width="56" height="46" rx="3" fill="#E9783B"/><rect x="-4" y="-10" width="64" height="14" rx="3" fill="#F08B52"/><rect x="24" y="-10" width="8" height="56" fill="#FFE3A3"/><path d="M28 -10 c-14 -16 -26 -2 -12 0 M28 -10 c14 -16 26 -2 12 0" stroke="#FFE3A3" stroke-width="4" fill="none"/></g><path d="M128 26 c0-6 9-6 9 0 c0-6 9-6 9 0 c0 6-9 12-9 12 s-9-6-9-12z" fill="#B4541A"/></svg><div><h3>Donate</h3><p>Berikan gratis untuk mahasiswa yang membutuhkan.</p></div></article>
     </div>
   </section>
@@ -121,7 +159,7 @@
 <!-- EMAIL -->
 <section class="screen" id="email">
   <div class="hero"><div class="c1"></div><div class="c2"></div>
-    <div class="brand brand-logo"><img src="img/logo.png" alt="ReUse — Your Old, Their Gold"></div></div>
+    <div class="brand"><div class="logo" data-ic="cycle"></div><h2>ReUse</h2><em>Your Old, Their Gold</em></div></div>
   <form class="sheet" id="emailF" novalidate>
     <h1>Daftar atau masuk</h1>
     <p id="emailP">Gunakan email kampus berakhiran .ac.id. Kami kirim kode OTP untuk verifikasi.</p>
