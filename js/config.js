@@ -1,5 +1,5 @@
 // Isi dengan data dari Supabase Dashboard → Project Settings → API.
-// "anon public key" memang aman ditaruh di frontend; keamanan data dijaga oleh RLS di supabase/schema.sql.
+// "anon public key" memang aman ditaruh di frontend; keamanan data dijaga oleh RLS di supabase/migrations/001_sprint2_schema.sql.
 window.REUSE_CONFIG = {
   SUPABASE_URL: 'https://bztmvkbwqxgscximthcn.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_oSMrxFELws0WkWkgjhP1AA_1uY5808U',

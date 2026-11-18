@@ -1,7 +1,7 @@
 # Changelog
 
 ## 2026-11-18 · Sprint 2
-- Tersambung ke Supabase: Auth (OTP email atau password), tabel `profiles`/`items`/`conversations`/`messages`, bucket `item-photos`, RLS, Realtime (`supabase/schema.sql`).
+- Tersambung ke Supabase: Auth (OTP email atau password), tabel `profiles`/`items`/`conversations`/`messages`, bucket `item-photos`, RLS, Realtime (`supabase/migrations/001_sprint2_schema.sql`).
 - PBI-05: beranda membaca barang dari database, update live.
 - PBI-06: layar Cari dengan kata kunci + chip kategori.
 - PBI-07: filter kampus, area kos, mode; kolom area kos di form posting.

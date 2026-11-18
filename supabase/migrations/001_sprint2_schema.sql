@@ -1,4 +1,4 @@
--- ReUse · Sprint 2 · skema Supabase
+-- ReUse · migrasi 001 (Sprint 2) · skema awal Supabase
 -- Jalankan sekali di Supabase Dashboard → SQL Editor → New query → Run.
 -- Aman dijalankan ulang (idempotent).
 
@@ -50,6 +50,7 @@ create table if not exists public.items (
   constraint swap_needs_wish  check (mode <> 'Swap' or char_length(coalesce(wish,'')) >= 3)
 );
 create index if not exists items_campus_created_idx on public.items (campus, created_at desc);
+create index if not exists items_owner_idx on public.items (owner);
 alter table public.items enable row level security;
 
 drop policy if exists "items: baca semua akun login" on public.items;
@@ -88,6 +89,8 @@ create table if not exists public.conversations (
   unique (item_id, buyer_id),
   check (buyer_id <> seller_id)
 );
+create index if not exists conversations_seller_idx on public.conversations (seller_id);
+create index if not exists conversations_buyer_idx on public.conversations (buyer_id);
 alter table public.conversations enable row level security;
 
 drop policy if exists "conv: peserta bisa baca" on public.conversations;
@@ -110,6 +113,7 @@ create table if not exists public.messages (
   created_at      timestamptz not null default now()
 );
 create index if not exists messages_conv_idx on public.messages (conversation_id, created_at);
+create index if not exists messages_sender_idx on public.messages (sender);
 alter table public.messages enable row level security;
 
 drop policy if exists "msg: peserta bisa baca" on public.messages;
@@ -136,6 +140,8 @@ begin
    where id = new.conversation_id;
   return new;
 end $$;
+
+revoke execute on function public.touch_conversation() from public, anon, authenticated;
 
 drop trigger if exists messages_touch_conv on public.messages;
 create trigger messages_touch_conv after insert on public.messages
