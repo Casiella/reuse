@@ -352,3 +352,11 @@ img.kos-bg{object-fit:cover;object-position:center 40%;filter:blur(1.5px) satura
 .kos-shade{background:linear-gradient(180deg,#0F1E1466 0%,#0F1E1433 28%,#0F1E1499 58%,#0B170FE6 100%)}
 .gbtn{background:linear-gradient(90deg,#1B3A24 0%,#2D4B33 45%,#3E7346 100%);box-shadow:0 10px 24px #0F1E1466;border:1px solid #ffffff26}
 .gbtn:hover{background:linear-gradient(90deg,#16301D,#284530 45%,#36663E)}
+/* header beranda & cari: kaca buram di atas foto kos */
+.hhead{position:relative;overflow:hidden;background:#2D4B33;isolation:isolate;border-radius:0 0 26px 26px}
+.hhead::before{content:"";position:absolute;inset:-20px;z-index:-2;background:url(../img/kos-bg.jpg) center 35%/cover;filter:blur(14px) saturate(1.15);transform:scale(1.1)}
+.hhead::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(160deg,#1F3A26d9 0%,#2D4B33b3 55%,#3E7346a6 100%)}
+.hhead .search,.hhead .fbtn{background:#ffffff26;border:1px solid #ffffff40;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff}
+.hhead .search{color:#ffffffd0}
+.hhead .sbadge{background:#ffffffd9;backdrop-filter:blur(6px)}
+.hhead .sbox{background:#ffffffe6;backdrop-filter:blur(8px)}
