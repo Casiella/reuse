@@ -346,3 +346,4 @@ a.lp-btn{text-decoration:none}
 .gbtn:disabled{opacity:.6}
 .gnote{text-align:center;font-size:12px;margin-top:14px;opacity:.9}
 .gnote b{font-weight:700}
+#email .slides:not(:has(figure)){background:linear-gradient(90deg,#ffffff18,#ffffff38,#ffffff18);background-size:200% 100%;animation:sk 1.2s infinite}
