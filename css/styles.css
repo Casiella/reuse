@@ -286,7 +286,7 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.92em;background:var(--g
 .lp-foot{background:#FAFCF8;padding:28px 22px 30px;text-align:center}
 .lp-foot img{width:150px}
 .lp-foot p{font-size:12px;color:var(--mut);margin:8px 0 16px;line-height:1.6}
-.lp-illus svg{width:100%;display:block;border:8px solid #fff;border-radius:6px;box-shadow:0 14px 30px #14301C26}
+.lp-illus>svg{width:100%;display:block;border:8px solid #fff;border-radius:6px;box-shadow:0 14px 30px #14301C26}
 .lp-cards svg{width:100%;aspect-ratio:16/10;display:block}
 a.lp-btn{text-decoration:none}
 .lp-hero{min-height:470px}
