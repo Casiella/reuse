@@ -239,3 +239,29 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.92em;background:var(--g
 .crow{display:flex;gap:8px}
 .crow .field{height:44px;border-radius:22px}
 .sendb{width:44px;height:44px;border-radius:50%;flex:none;padding:0}
+/* ===== Landing ombre + logo ===== */
+#onb{background:linear-gradient(180deg,#FAFDF7 0%,#E4F2DB 26%,#A9D19A 52%,#4F8A55 76%,#2D4B33 100%);color:var(--ink);position:relative;overflow:hidden}
+#onb::before,#onb::after{content:"";position:absolute;border-radius:50%;filter:blur(40px);pointer-events:none}
+#onb::before{width:260px;height:260px;right:-90px;top:120px;background:#BFE3A8;opacity:.7}
+#onb::after{width:220px;height:220px;left:-80px;top:330px;background:#8FC27F;opacity:.55}
+#onb>*{position:relative;z-index:1}
+#onb .onb-top{padding:14px 18px 0}
+#onb .pill{background:#2D4B3314;color:var(--g9);border:1px solid #2D4B3322;backdrop-filter:blur(6px)}
+.onb-logo{display:block;width:min(230px,62%);margin:6px auto 0;filter:drop-shadow(0 6px 14px #2D4B3322)}
+#onb .onb-stage{min-height:300px}
+#onb .float{background:#ffffffe6;backdrop-filter:blur(8px);border:1px solid #ffffff;box-shadow:0 10px 26px #1C2A1F26;animation:bob 5s ease-in-out infinite}
+#onb .float:nth-child(2){animation-delay:-1.2s}#onb .float:nth-child(3){animation-delay:-2.5s}#onb .float:nth-child(4){animation-delay:-3.7s}
+@keyframes bob{50%{translate:0 -7px}}
+#onb .hub{background:linear-gradient(145deg,#ffffff,#DDEFD3);box-shadow:0 14px 34px #1C2A1F33,inset 0 0 0 1px #fff;border-radius:30px}
+#onb .hub .ring{position:absolute;inset:-14px;border-radius:38px;border:1.5px dashed #ffffffa0;animation:spin 18s linear infinite}
+#onb .hub .r2{inset:-30px;border-radius:48px;border-style:solid;border-color:#ffffff40;animation-duration:30s;animation-direction:reverse}
+@keyframes spin{to{rotate:360deg}}
+#onb .onb-card{box-shadow:0 -10px 30px #1C2A1F30}
+@media (prefers-reduced-motion:reduce){#onb .float,#onb .hub .ring{animation:none}}
+/* auth hero with logo */
+.hero{background:linear-gradient(180deg,#FAFDF7 0%,#E1F0D7 38%,#93C487 72%,#3B6645 100%);color:var(--ink)}
+.hero .c1{background:#CFE8BF;opacity:.6;filter:blur(30px)}
+.hero .c2{background:#7FB27A;opacity:.45;filter:blur(30px)}
+.brand-logo{margin-top:56px;text-align:center}
+.brand-logo img{width:min(250px,70%);filter:drop-shadow(0 6px 14px #2D4B3322)}
+.brand .logo{background:#fff;box-shadow:0 6px 16px #2D4B3322}
