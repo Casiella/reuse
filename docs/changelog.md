@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-18 · Tampilan
+- Layar login: latar ilustrasi kamar kos + kartu kaca (glassmorphism), slideshow barang yang benar-benar sedang dijual (fungsi `showcase`, migrasi 002), logo putih.
 - Logo dibuat ulang sebagai vektor (`img/logo.svg`) supaya tajam di semua layar. Layar login: slideshow 5 barang contoh yang berganti otomatis.
 - Perbaikan: halaman depan tidak lagi ikut tampil di layar lain. Layar login/OTP kembali ke desain awal. Kardus di ilustrasi dibuat lebih realistis.
 - Landing: foto barang diganti ilustrasi (kardus, buku, lampu, tanaman); tombol login berulang dihapus. Akun yang sudah login tidak pernah diarahkan ke halaman depan/login lagi.

@@ -26,6 +26,7 @@ out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
 shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
 sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
 send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
 trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
 };
 const svg=(n,c='i')=>`<svg class="${c}" viewBox="0 0 24 24">${IC[n]||''}</svg>`;
@@ -100,7 +101,7 @@ function go(id,opts={}){
   cur=id;window.scrollTo(0,0);if(id!=='chat')curConv=null;
   $('#nav').hidden=!['home','search','chats','profile'].includes(id);
   document.querySelectorAll('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
-  ({onb:renderOnb,otp:startOtp,campus:renderCampus,home:renderHome,search:renderSearch,chats:renderChats,chat:()=>renderChat(opts.id),
+  ({email:loadShowcase,onb:renderOnb,otp:startOtp,campus:renderCampus,home:renderHome,search:renderSearch,chats:renderChats,chat:()=>renderChat(opts.id),
     post:resetPost,profile:renderProfile,detail:()=>renderDetail(opts.id)}[id]||(()=>{}))();
 }
 document.addEventListener('click',e=>{
@@ -136,7 +137,8 @@ $('#lpSearch').onsubmit=e=>{e.preventDefault();const q=$('#lpQ').value.trim();if
 
 /* ---------- PBI-01 · Email + OTP (Supabase Auth) ---------- */
 const EMRE=/^[^\s@]+@([a-z0-9-]+\.)*[a-z0-9-]+\.ac\.id$/i;
-if(PWMODE){$('#pwI').hidden=false;$('#emailP').textContent='Gunakan email kampus berakhiran .ac.id. Akun baru otomatis dibuat saat pertama masuk.';$('#emailB').textContent='Masuk / daftar'}
+if(PWMODE){$('#pwWrap').hidden=false;$('#emailB').textContent='Masuk'}
+$('#pwEye').onclick=()=>{const i=$('#pwI');i.type=i.type==='password'?'text':'password'};
 $('#emailF').onsubmit=async e=>{e.preventDefault();const v=$('#emailI').value.trim().toLowerCase(),E=$('#emailE'),B=$('#emailB');
   if(!v){E.textContent='Email wajib diisi.';return}
   if(!EMRE.test(v)){E.textContent='Gunakan email kampus yang berakhiran .ac.id.';return}
@@ -157,13 +159,18 @@ $('#emailF').onsubmit=async e=>{e.preventDefault();const v=$('#emailI').value.tr
   }catch(err){E.textContent=errMsg(err)}
   finally{B.disabled=false;B.textContent=label}};
 $('#emailI').oninput=()=>$('#emailE').textContent='';
-/* slideshow di layar login */
-const slides=[...document.querySelectorAll('#slides figure')];let si=0,sTimer;
-$('#sdots').innerHTML=slides.map((_,i)=>`<i data-s="${i}"></i>`).join('');
-const showSlide=i=>{si=(i+slides.length)%slides.length;slides.forEach((f,k)=>f.classList.toggle('on',k===si));[...$('#sdots').children].forEach((d,k)=>d.classList.toggle('on',k===si))};
+/* slideshow barang yang sedang dijual (layar login) */
+let slides=[],si=0,sTimer,showcaseLoaded=false;
+const SAMPLE_SHOW=SEED.map(x=>({title:x.t,mode:x.m,price:x.p,photo:x.img[0],campus:'unpad'}));
+function buildSlides(list){const S2=$('#slides');S2.querySelectorAll('figure').forEach(f=>f.remove());
+  list.forEach(x=>S2.insertAdjacentHTML('afterbegin',`<figure><img src="${esc(x.photo)}" alt=""><figcaption><span class="mtag m-${esc(x.mode)}">${esc(x.mode)}</span><span class="ft"><b>${esc(x.title)}</b><small>${x.mode==='Sell'?rp(x.price):x.mode==='Swap'?'Tukar barang':'Gratis'} · ${esc(campusOf(x.campus).s)}</small></span></figcaption></figure>`));
+  slides=[...S2.querySelectorAll('figure')].reverse();$('#sdots').innerHTML=slides.map((_,i)=>`<i data-s="${i}"></i>`).join('');showSlide(0);startSlides()}
+const showSlide=i=>{if(!slides.length)return;si=(i+slides.length)%slides.length;slides.forEach((f,k)=>f.classList.toggle('on',k===si));[...$('#sdots').children].forEach((d,k)=>d.classList.toggle('on',k===si))};
 $('#sdots').onclick=e=>{const d=e.target.closest('[data-s]');if(d){showSlide(+d.dataset.s);startSlides()}};
 function startSlides(){clearInterval(sTimer);sTimer=setInterval(()=>{if(cur==='email')showSlide(si+1)},3200)}
-showSlide(0);startSlides();
+async function loadShowcase(){if(showcaseLoaded)return;showcaseLoaded=true;
+  try{const {data,error}=await sb.rpc('showcase',{n:8});if(error)throw error;
+    buildSlides(data&&data.length?data:SAMPLE_SHOW)}catch(e){buildSlides(SAMPLE_SHOW)}}
 
 let rt,cd=0,tries=0;
 const box=$('#otpBox');box.innerHTML=Array.from({length:OTPN},(_,i)=>`<input inputmode="numeric" maxlength="${OTPN}" aria-label="Digit ${i+1}">`).join('');
