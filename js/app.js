@@ -121,8 +121,8 @@ function scope(){
   <p>Sprint goal: seeker bisa menemukan barang di kampusnya dan menghubungi owner.</p>
   <div class="scope">
   ${ck(1,'PBI-05 · Home: listing terbaru per kampus','8 SP · Fikriyyah')}
-  ${ck(1,'PBI-06 · Search kata kunci + chip kategori','5 SP · Safira')}
-  ${ck(1,'PBI-07 · Campus filter: kampus, area kos, mode','3 SP · Safira')}
+  ${ck(1,'PBI-06 · Search kata kunci + chip kategori','5 SP · Casiella')}
+  ${ck(1,'PBI-07 · Campus filter: kampus, area kos, mode','3 SP · Wella')}
   ${ck(1,'PBI-08 · Chat realtime + 3 template pesan','8 SP · Anassya')}
   ${ck(0,'Revisi UI dari usability test (laporan M2)','Masuk setelah 21 Nov')}
   ${ck(0,'Favorit, bagikan, edit profil','Sprint berikutnya')}

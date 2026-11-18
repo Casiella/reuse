@@ -6,16 +6,16 @@
 
 - Planning: 14 Nov
 - Daily stand-up 15 menit (online)
-- Review & demo: 21 Nov
-- Retrospective: 21 Nov
+- Review & demo: 19 Nov
+- Retrospective: 19 Nov
 
 ## Sprint backlog
 
 | ID | Item | SP | PIC |
 |---|---|---|---|
 | PBI-05 | Home: listing terbaru per kampus | 8 | Dev · Fikriyyah |
-| PBI-06 | Search kata kunci + chip kategori | 5 | Dev · Safira |
-| PBI-07 | Campus filter: kampus, area kos, mode | 3 | Dev · Safira |
+| PBI-06 | Search kata kunci + chip kategori | 5 | Dev · Casiella |
+| PBI-07 | Campus filter: kampus, area kos, mode | 3 | Dev · Wella |
 | PBI-08 | Chat realtime + 3 template pesan | 8 | Dev · Anassya |
 
 ## Increment

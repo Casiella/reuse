@@ -17,8 +17,8 @@ Repo ini dipakai terus untuk semua sprint. Sprint 1 (versi lama, belum pakai dat
 | ID | Sprint Backlog | SP | PIC | Status |
 |---|---|---|---|---|
 | PBI-05 | Home: listing terbaru per kampus | 8 | Fikriyyah | ✅ |
-| PBI-06 | Search kata kunci + chip kategori | 5 | Safira | ✅ |
-| PBI-07 | Campus filter: kampus, area kos, mode | 3 | Safira | ✅ |
+| PBI-06 | Search kata kunci + chip kategori | 5 | Casiella | ✅ |
+| PBI-07 | Campus filter: kampus, area kos, mode | 3 | Wella | ✅ |
 | PBI-08 | Chat realtime + 3 template pesan | 8 | Anassya | ✅ |
 
 Juga di sprint ini: PBI-01 (OTP) dan PBI-02 (posting) yang sebelumnya disimulasikan sekarang **benar-benar memakai Supabase Auth, Storage, dan Database**.
@@ -65,7 +65,7 @@ git push -u origin main
 
 Lalu di Vercel: **Add New → Project →** pilih repo `reuse` → Framework Preset **Other**, Build Command kosong, Output Directory `.` → Deploy. Setiap `git push` ke `main` otomatis ter-deploy.
 
-## Cara demo (21 Nov)
+## Cara demo (19 Nov)
 
 1. Buka app di **dua browser/HP** (atau satu jendela biasa + satu incognito), login dengan dua email kampus berbeda.
 2. Akun A: tombol **+** → posting barang (foto, mode, area kos, titik COD).
