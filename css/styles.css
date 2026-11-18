@@ -294,3 +294,10 @@ a.lp-btn{text-decoration:none}
 .lp-scene{position:relative;inset:auto;display:block;width:100%;height:auto;margin-top:62px}
 .lp-copy{padding:6px 22px 70px;max-width:none}
 .lp-copy h1{font-size:32px}
+/* auth hero: ombre + logo */
+.hero{background:linear-gradient(180deg,#FAFDF7 0%,#E1F0D7 38%,#93C487 72%,#3B6645 100%);color:var(--ink)}
+.hero .c1{background:#CFE8BF;opacity:.6;filter:blur(30px)}
+.hero .c2{background:#7FB27A;opacity:.45;filter:blur(30px)}
+.brand-logo{margin-top:56px;text-align:center}
+.brand-logo img{width:min(250px,70%);filter:drop-shadow(0 6px 14px #2D4B3322)}
+.brand .logo{background:#fff;box-shadow:0 6px 16px #2D4B3322}
