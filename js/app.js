@@ -95,6 +95,7 @@ async function fetchItems({campus,area,mode,cat,q}){
 /* ---------- Navigasi ---------- */
 let cur='onb',curConv=null;
 function go(id,opts={}){
+  if(S.me&&['onb','email','otp'].includes(id))id='home';
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
   cur=id;window.scrollTo(0,0);if(id!=='chat')curConv=null;
   $('#nav').hidden=!['home','search','chats','profile'].includes(id);
@@ -129,8 +130,9 @@ function scope(){
 $('#scopeBtn').onclick=scope;$('#scopeBtn2').onclick=scope;
 
 /* ---------- Onboarding ---------- */
-function renderOnb(){$('#onb').scrollTop=0}
-$('#lpSearch').onsubmit=e=>{e.preventDefault();const q=$('#lpQ').value.trim();if(q)S.q=q;go('email');if(q)toast('Masuk dulu untuk mencari “'+q+'”')};
+function renderOnb(){$('#onb').scrollTop=0;$('#lpInT').textContent=S.me?'Buka app':'Masuk';$('#lpCtaT').textContent=S.me?'Lanjut ke beranda':'Mulai sekarang'}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-enter]');if(b)go(S.me?b.dataset.enter:'email')});
+$('#lpSearch').onsubmit=e=>{e.preventDefault();const q=$('#lpQ').value.trim();if(q)S.q=q;if(S.me){go('search');return}go('email');if(q)toast('Masuk dulu untuk mencari “'+q+'”')};
 
 /* ---------- PBI-01 · Email + OTP (Supabase Auth) ---------- */
 const EMRE=/^[^\s@]+@([a-z0-9-]+\.)*[a-z0-9-]+\.ac\.id$/i;

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-18 · Tampilan
+- Landing: foto barang diganti ilustrasi (kardus, buku, lampu, tanaman); tombol login berulang dihapus. Akun yang sudah login tidak pernah diarahkan ke halaman depan/login lagi.
 - Halaman depan diganti jadi landing page: navbar + logo, hero pemandangan, kotak cari, sambutan, 3 kartu Sell/Swap/Donate. Kartu melayang dihapus.
 - Layar pembuka dan layar daftar/masuk memakai latar ombre hijau dan logo ReUse (`img/logo.png`).
 
