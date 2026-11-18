@@ -301,3 +301,18 @@ a.lp-btn{text-decoration:none}
 .brand-logo{margin-top:56px;text-align:center}
 .brand-logo img{width:min(250px,70%);filter:drop-shadow(0 6px 14px #2D4B3322)}
 .brand .logo{background:#fff;box-shadow:0 6px 16px #2D4B3322}
+/* login slideshow */
+#email .hero{min-height:470px;padding-bottom:56px}
+#email .brand-logo{margin-top:22px}
+#email .brand-logo img{width:min(230px,62%)}
+.slides{position:relative;margin:18px auto 0;width:min(320px,88%);aspect-ratio:4/3;border-radius:20px;overflow:hidden;box-shadow:0 18px 40px #14301C40;border:5px solid #fff;background:#fff}
+.slides figure{position:absolute;inset:0;margin:0;opacity:0;transition:opacity .9s ease}
+.slides figure.on{opacity:1}
+.slides figure img{width:100%;height:100%;object-fit:cover;transform:scale(1.08);transition:transform 4s ease}
+.slides figure.on img{transform:scale(1)}
+.slides figcaption{position:absolute;left:10px;right:10px;bottom:28px;display:flex;align-items:center;gap:8px;background:#ffffffeb;backdrop-filter:blur(6px);border-radius:12px;padding:8px 10px;font-size:12px;font-weight:600;color:var(--ink);box-shadow:0 4px 12px #0002}
+.slides figcaption .mtag{position:static;flex:none}
+.sdots{position:absolute;bottom:9px;left:0;right:0;display:flex;justify-content:center;gap:5px;z-index:2}
+.sdots i{width:6px;height:6px;border-radius:9px;background:#ffffffa0;cursor:pointer;transition:width .3s}
+.sdots i.on{width:18px;background:#fff}
+@media (prefers-reduced-motion:reduce){.slides figure,.slides figure img{transition:none}}

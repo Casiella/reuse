@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-18 · Tampilan
+- Logo dibuat ulang sebagai vektor (`img/logo.svg`) supaya tajam di semua layar. Layar login: slideshow 5 barang contoh yang berganti otomatis.
 - Perbaikan: halaman depan tidak lagi ikut tampil di layar lain. Layar login/OTP kembali ke desain awal. Kardus di ilustrasi dibuat lebih realistis.
 - Landing: foto barang diganti ilustrasi (kardus, buku, lampu, tanaman); tombol login berulang dihapus. Akun yang sudah login tidak pernah diarahkan ke halaman depan/login lagi.
 - Halaman depan diganti jadi landing page: navbar + logo, hero pemandangan, kotak cari, sambutan, 3 kartu Sell/Swap/Donate. Kartu melayang dihapus.

@@ -157,6 +157,13 @@ $('#emailF').onsubmit=async e=>{e.preventDefault();const v=$('#emailI').value.tr
   }catch(err){E.textContent=errMsg(err)}
   finally{B.disabled=false;B.textContent=label}};
 $('#emailI').oninput=()=>$('#emailE').textContent='';
+/* slideshow di layar login */
+const slides=[...document.querySelectorAll('#slides figure')];let si=0,sTimer;
+$('#sdots').innerHTML=slides.map((_,i)=>`<i data-s="${i}"></i>`).join('');
+const showSlide=i=>{si=(i+slides.length)%slides.length;slides.forEach((f,k)=>f.classList.toggle('on',k===si));[...$('#sdots').children].forEach((d,k)=>d.classList.toggle('on',k===si))};
+$('#sdots').onclick=e=>{const d=e.target.closest('[data-s]');if(d){showSlide(+d.dataset.s);startSlides()}};
+function startSlides(){clearInterval(sTimer);sTimer=setInterval(()=>{if(cur==='email')showSlide(si+1)},3200)}
+showSlide(0);startSlides();
 
 let rt,cd=0,tries=0;
 const box=$('#otpBox');box.innerHTML=Array.from({length:OTPN},(_,i)=>`<input inputmode="numeric" maxlength="${OTPN}" aria-label="Digit ${i+1}">`).join('');
