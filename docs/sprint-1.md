@@ -55,3 +55,14 @@ Konfigurasi Supabase Auth (OTP) dan skema database dari Sprint 0. Di prototipe i
 ## Catatan
 
 Kolom Increment di slide menyebut "chat owner berjalan di PWA", padahal chat tidak ada di backlog Sprint 1. Perlu dikonfirmasi saat review.
+
+## Sprint Review · 13 Nov 2026
+
+- **Hasil:** 19/19 SP selesai. PBI-01 sampai PBI-04 didemokan dan diterima. Sprint goal tercapai.
+- **Feedback dosen:** aplikasi harus tersambung ke Supabase. Saat demo, OTP dan data barang masih disimulasikan di browser.
+- **Tindak lanjut (selesai 18 Nov):**
+  - Login lewat Supabase Auth, hanya email `.ac.id`.
+  - Barang disimpan di tabel `items`, terlihat dari akun lain.
+  - Foto disimpan di Supabase Storage (`item-photos`).
+  - Keamanan lewat RLS (lihat `supabase/migrations/`).
+  - OTP lewat email butuh SMTP sendiri; untuk demo dipakai email kampus + password.
