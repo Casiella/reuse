@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-11-18 · Tampilan
+- Halaman depan diganti jadi landing page: navbar + logo, hero pemandangan, kotak cari, sambutan, 3 kartu Sell/Swap/Donate. Kartu melayang dihapus.
 - Layar pembuka dan layar daftar/masuk memakai latar ombre hijau dan logo ReUse (`img/logo.png`).
 
 ## 2026-11-18 · Sprint 2

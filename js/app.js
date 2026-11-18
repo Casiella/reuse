@@ -129,13 +129,8 @@ function scope(){
 $('#scopeBtn').onclick=scope;$('#scopeBtn2').onclick=scope;
 
 /* ---------- Onboarding ---------- */
-const ONB=[['Barang lama, nilai baru','Barang yang sudah tidak kamu pakai bisa langsung dipakai mahasiswa lain di sekitar kampusmu.'],
-['Sell, swap, atau donate','Jual untuk uang tambahan, tukar dengan barang yang kamu butuh, atau berbagi gratis.'],
-['Aman dan sesama mahasiswa','Daftar pakai email kampus dan OTP. Ketemu di titik COD area kampus.']];
-function renderOnb(){const [t,p]=ONB[S.onb];$('#onbT').textContent=t;$('#onbP').textContent=p;
-  [...$('#onbD').children].forEach((d,i)=>d.classList.toggle('on',i===S.onb));
-  $('#onbN').innerHTML=(S.onb===2?'Mulai':'Lanjut')+svg('right');}
-$('#onbN').onclick=()=>{if(S.onb<2){S.onb++;renderOnb()}else go('email')};
+function renderOnb(){$('#onb').scrollTop=0}
+$('#lpSearch').onsubmit=e=>{e.preventDefault();const q=$('#lpQ').value.trim();if(q)S.q=q;go('email');if(q)toast('Masuk dulu untuk mencari “'+q+'”')};
 
 /* ---------- PBI-01 · Email + OTP (Supabase Auth) ---------- */
 const EMRE=/^[^\s@]+@([a-z0-9-]+\.)*[a-z0-9-]+\.ac\.id$/i;
@@ -190,7 +185,7 @@ async function afterLogin(user){
   S.uid=user.id;S.email=user.email;
   const {data:prof,error}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
   if(error){toast(errMsg(error))}
-  if(prof?.campus){S.me=prof;S.filter.campus=prof.campus;startRealtime();go('home')}
+  if(prof?.campus){S.me=prof;S.filter.campus=prof.campus;startRealtime();go(S.q?'search':'home')}
   else go('campus');
 }
 
@@ -209,7 +204,7 @@ $('#campB').onclick=async()=>{const v=document.querySelector('input[name=camp]:c
   B.disabled=false;
   if(error){$('#campE').textContent=errMsg(error);return}
   S.me=data;S.filter={campus:data.campus,area:'',mode:'Semua'};startRealtime();
-  toast('Akun terverifikasi · '+myCampus().s);go('home');};
+  toast('Akun terverifikasi · '+myCampus().s);go(S.q?'search':'home');};
 
 /* ---------- PBI-05 · Beranda: listing terbaru per kampus ---------- */
 const priceTxt=i=>i.m==='Sell'?rp(i.p):i.m==='Swap'?'Tukar':'Gratis';

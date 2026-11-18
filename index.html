@@ -24,19 +24,72 @@
 
 <!-- ONBOARDING -->
 <section class="screen" id="onb">
-  <div class="onb-top"><span></span><button class="pill" data-go="email">Lewati</button></div>
-  <img class="onb-logo" src="img/logo.png" alt="ReUse — Your Old, Their Gold">
-  <div class="onb-stage">
-    <div class="float" style="left:6%;top:6%;transform:rotate(-4deg)"><div class="ic" data-ic="book"></div><div>Buku Ekonomi<span>1,2 km</span></div></div>
-    <div class="float" style="right:6%;top:10%;transform:rotate(5deg)"><div class="ic" data-ic="table"></div><div>Meja Lipat<span>0,8 km</span></div></div>
-    <div class="float" style="left:8%;bottom:16%;transform:rotate(4deg)"><div class="ic" data-ic="shirt"></div><div>Kemeja PMB<span>0,9 km</span></div></div>
-    <div class="float" style="right:5%;bottom:24%;transform:rotate(-4deg)"><div class="ic" data-ic="laptop"></div><div>Charger 65W<span>2 km</span></div></div>
-    <div class="hub"><span class="ring"></span><span class="ring r2"></span><span data-ic="cycle"></span></div>
+  <header class="lp-nav">
+    <img src="img/logo.png" alt="ReUse" class="lp-mark">
+    <button class="lp-in" data-go="email"><span data-ic="user"></span>Masuk</button>
+  </header>
+
+  <div class="lp-hero">
+    <svg class="lp-scene" viewBox="0 0 400 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7E7B4"/><stop offset=".45" stop-color="#E9D79A"/><stop offset=".75" stop-color="#B9D58F"/><stop offset="1" stop-color="#6FA061"/></linearGradient>
+        <radialGradient id="sun" cx=".62" cy=".3" r=".45"><stop offset="0" stop-color="#FFF8DC"/><stop offset=".18" stop-color="#FFE9A6" stop-opacity=".95"/><stop offset=".5" stop-color="#F6D27E" stop-opacity=".35"/><stop offset="1" stop-color="#F6D27E" stop-opacity="0"/></radialGradient>
+        <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#14301C" stop-opacity=".78"/><stop offset=".55" stop-color="#14301C" stop-opacity=".25"/><stop offset="1" stop-color="#14301C" stop-opacity="0"/></linearGradient>
+        <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset=".6" stop-color="#14301C" stop-opacity="0"/><stop offset="1" stop-color="#14301C" stop-opacity=".55"/></linearGradient>
+        <g id="pine"><path d="M0 0 L-14 26 H-7 L-18 48 H-9 L-22 74 H22 L9 48 H18 L7 26 H14 Z"/><rect x="-2.5" y="74" width="5" height="10"/></g>
+      </defs>
+      <rect width="400" height="420" fill="url(#sky)"/>
+      <rect width="400" height="420" fill="url(#sun)"/>
+      <circle cx="248" cy="126" r="26" fill="#FFF6D6"/>
+      <path d="M0 230 L60 170 L110 205 L170 140 L230 196 L290 150 L350 190 L400 160 V420 H0Z" fill="#9EBF86" opacity=".75"/>
+      <path d="M0 262 Q70 210 140 245 T280 230 T400 222 V420 H0Z" fill="#6E9E62"/>
+      <g fill="#3F6E45" opacity=".9"><use href="#pine" x="300" y="170"/><use href="#pine" x="330" y="188" transform="translate(330 188) scale(.8) translate(-330 -188)"/><use href="#pine" x="365" y="176"/><use href="#pine" x="40" y="186" transform="translate(40 186) scale(.75) translate(-40 -186)"/></g>
+      <path d="M0 300 Q90 262 190 290 T400 280 V420 H0Z" fill="#4F8A4E"/>
+      <g fill="#2E5A35"><use href="#pine" x="372" y="226" transform="translate(372 226) scale(1.35) translate(-372 -226)"/><use href="#pine" x="18" y="240" transform="translate(18 240) scale(1.2) translate(-18 -240)"/></g>
+      <g transform="translate(206 262)">
+        <path d="M-6 30 L50 6 L106 30 Z" fill="#8A4B2E"/><rect x="2" y="30" width="96" height="40" fill="#B7794E"/>
+        <rect x="14" y="40" width="20" height="16" fill="#FFD98A"/><rect x="44" y="40" width="20" height="30" fill="#FFE3A3"/><rect x="74" y="40" width="16" height="16" fill="#FFD98A"/>
+        <rect x="70" y="4" width="10" height="18" fill="#7A3F25"/>
+      </g>
+      <path d="M0 340 Q100 312 210 336 T400 330 V420 H0Z" fill="#3D7442"/>
+      <rect width="400" height="420" fill="url(#shade)"/><rect width="400" height="420" fill="url(#fade)"/>
+    </svg>
+    <div class="lp-copy">
+      <span class="lp-badge"><span data-ic="shield"></span>Khusus mahasiswa · email .ac.id</span>
+      <h1>Barang lama,<br>nilai baru.</h1>
+      <p>Jual, tukar, atau donasikan barang bekas ke sesama mahasiswa di sekitar kampusmu.</p>
+      <button class="lp-cta" data-go="email">Mulai sekarang<span data-ic="right"></span></button>
+    </div>
   </div>
-  <div class="onb-card">
-    <h1 id="onbT"></h1><p id="onbP"></p>
-    <div class="onb-foot"><div class="dots" id="onbD"><i></i><i></i><i></i></div><button class="btn" id="onbN"></button></div>
-  </div>
+
+  <form class="lp-search" id="lpSearch">
+    <div class="lp-sf"><span data-ic="search"></span><input id="lpQ" placeholder="Cari buku, kalkulator, kemeja…" autocomplete="off"></div>
+    <button class="lp-go">Cari</button>
+  </form>
+
+  <section class="lp-welcome">
+    <div class="lp-photo"><img src="img/mankiw-pengantar-ekonomi.jpg" alt=""><span class="lp-stamp"><span data-ic="cycle"></span>ReUse</span><span class="lp-leaf" data-ic="gift"></span></div>
+    <div>
+      <h2>Selamat datang di ReUse</h2>
+      <p>Buku, alat tulis, perabot kos, sampai kemeja PMB. Barang yang sudah tidak kamu pakai masih berharga buat mahasiswa lain. Ketemuan di titik COD area kampus, aman dan dekat.</p>
+      <div class="lp-row"><button class="lp-btn" data-go="email"><span data-ic="plus"></span>Posting barang</button><a class="lp-link" href="#cara">Cara kerjanya</a></div>
+    </div>
+  </section>
+
+  <section class="lp-ways" id="cara">
+    <h2>3 cara pakai ReUse</h2>
+    <div class="lp-cards">
+      <article><img src="img/casio-fx-991id-calculator.jpg" alt=""><div><h3>Sell</h3><p>Jual barang dengan harga pantas, dapat uang tambahan.</p><button class="lp-btn sm" data-go="email">Mulai jual</button></div></article>
+      <article><img src="img/folding-laptop-table.jpg" alt=""><div><h3>Swap</h3><p>Tukar barang dengan yang lebih kamu butuhkan.</p><button class="lp-btn sm" data-go="email">Mulai tukar</button></div></article>
+      <article><img src="img/white-shirt-pmb.jpg" alt=""><div><h3>Donate</h3><p>Berikan gratis untuk mahasiswa yang membutuhkan.</p><button class="lp-btn sm" data-go="email">Mulai donasi</button></div></article>
+    </div>
+  </section>
+
+  <footer class="lp-foot">
+    <img src="img/logo.png" alt="ReUse">
+    <p>Daftar pakai email kampus · Chat langsung dengan pemilik · COD di area kampus</p>
+    <button class="btn" data-go="email">Daftar / masuk</button>
+  </footer>
 </section>
 
 <!-- EMAIL -->
