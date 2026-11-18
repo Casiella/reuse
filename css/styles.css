@@ -347,3 +347,8 @@ a.lp-btn{text-decoration:none}
 .gnote{text-align:center;font-size:12px;margin-top:14px;opacity:.9}
 .gnote b{font-weight:700}
 #email .slides:not(:has(figure)){background:linear-gradient(90deg,#ffffff18,#ffffff38,#ffffff18);background-size:200% 100%;animation:sk 1.2s infinite}
+/* login: foto kamar kos + tombol hijau tua ombre */
+img.kos-bg{object-fit:cover;object-position:center 40%;filter:blur(1.5px) saturate(1.05);transform:scale(1.04)}
+.kos-shade{background:linear-gradient(180deg,#0F1E1466 0%,#0F1E1433 28%,#0F1E1499 58%,#0B170FE6 100%)}
+.gbtn{background:linear-gradient(90deg,#1B3A24 0%,#2D4B33 45%,#3E7346 100%);box-shadow:0 10px 24px #0F1E1466;border:1px solid #ffffff26}
+.gbtn:hover{background:linear-gradient(90deg,#16301D,#284530 45%,#36663E)}
