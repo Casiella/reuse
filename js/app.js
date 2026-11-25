@@ -121,20 +121,7 @@ function modal(html){$('#modal').innerHTML=html;hydrate($('#modal'));$('#scrim')
 const closeModal=()=>$('#scrim').classList.remove('on');
 $('#scrim').addEventListener('click',e=>{if(e.target.id==='scrim'||e.target.closest('[data-close]'))closeModal()});
 
-function scope(){
-  const ck=(ok,b,s)=>`<div><span class="ck ${ok?'':'no'}">${svg(ok?'check':'lock')}</span><span><b>${b}</b><br><small>${s}</small></span></div>`;
-  modal(`<div class="mi" data-ic="flag"></div><h2>Sprint 3 · 15 SP</h2>
-  <p>Sprint 1–2 selesai: daftar, posting, cari, filter, dan chat. Sprint 3 menyelesaikan transaksi sampai barang berpindah tangan.</p>
-  <div class="scope">
-  ${ck(1,'PBI-09 · Kartu kesepakatan waktu & tempat COD di chat','3 SP')}
-  ${ck(1,'PBI-10 · Tandai Selesai, ringkasan dampak, profil aktivitas','5 SP')}
-  ${ck(1,'PBI-11 · Fake-door Sundul: tombol + log klik','2 SP')}
-  ${ck(1,'PBI-12 · Uji keamanan data (RLS) & bug fixing','5 SP')}
-  ${ck(1,'Panel admin: statistik, moderasi, pengguna','Pendukung PBI-10 & 11')}
-  ${ck(0,'Favorit, bagikan, edit profil','Sprint berikutnya')}
-  </div><button class="btn" data-close>Tutup</button>`);
-}
-$('#scopeBtn').onclick=scope;$('#scopeBtn2').onclick=scope;
+
 
 /* ---------- Onboarding ---------- */
 function renderOnb(){$('#onb').scrollTop=0;$('#lpInT').textContent=S.me?'Buka app':'Masuk';$('#lpCtaT').textContent=S.me?'Lanjut ke beranda':'Mulai sekarang'}
@@ -250,8 +237,7 @@ async function renderHome(){const f=S.filter,c=campusOf(f.campus),mine=f.campus=
   if(tok!==homeTok)return;
   if(list.length){g.innerHTML=list.map(cardHTML).join('');return}
   const label=f.mode==='Semua'?'':' '+f.mode;
-  g.innerHTML=`<div class="empty">Belum ada barang${esc(label)} di ${esc(c.s)}${f.area?' area '+esc(f.area):''}.${mine?'<br>Jadilah yang pertama posting lewat tombol +.':''}</div>`
-    +(f.area?'':`<div class="empty" style="padding:0 0 4px;font-size:11.5px">Contoh tampilan barang:</div>`+seedFor(f.campus).filter(i=>f.mode==='Semua'||i.m===f.mode).map(cardHTML).join(''));
+  g.innerHTML=`<div class="empty">Belum ada barang${esc(label)} di ${esc(c.s)}${f.area?' area '+esc(f.area):''}.${mine?'<br>Jadilah yang pertama posting lewat tombol +.':''}</div>`;
 }
 $('#chips').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(b){S.filter.mode=b.dataset.f;renderHome()}});
 $('#fSum').addEventListener('click',e=>{if(e.target.id==='fClr'){S.filter={campus:S.me.campus,area:'',mode:S.filter.mode};renderHome()}});
@@ -362,7 +348,7 @@ async function renderDetail(id){const el=$('#detail');
     if(!data){toast('Barang tidak ditemukan');go('home');return}i=cacheIt(mapItem(data));}
   const c=campusOf(i.campus);
   el.innerHTML=`<div class="gal"><div class="track" id="trk">${i.img.map(s=>`<img src="${esc(s)}" alt="">`).join('')}</div>
-   <div class="tb"><button id="dBack" aria-label="Kembali">${svg('left')}</button><span style="display:flex;gap:8px"><button data-lock="Bagikan barang">${svg('share')}</button><button data-lock="Simpan ke favorit">${svg('heart')}</button></span></div>
+   <div class="tb"><button id="dBack" aria-label="Kembali">${svg('left')}</button><button id="dShare" aria-label="Bagikan barang">${svg('share')}</button></div>
    <span class="cnt" id="cnt">1/${i.img.length}</span></div>
   <div class="dbody">
    ${i.status==='done'?`<div class="donebar">${svg('check')}<span><b>Barang sudah selesai</b><br>Sudah berpindah tangan${i.doneAt?' '+ago(i.doneAt)+' lalu':''}.</span></div>`:''}
@@ -392,6 +378,8 @@ async function renderDetail(id){const el=$('#detail');
       if(error){toast(errMsg(error));$('#delOk').disabled=false;return}
       const paths=i.mine?i.img.map(pathFromUrl).filter(Boolean):[];if(paths.length)sb.storage.from(BUCKET).remove(paths);
       delete S.cache[i.id];closeModal();toast('Barang dihapus');go('home')}};
+  $('#dShare').onclick=async()=>{const url=location.origin+'/';const text=`${i.t} · ${i.m==='Sell'?rp(i.p):i.m==='Swap'?'Tukar':'Gratis'} di ReUse (${c.s})`;
+    try{if(navigator.share){await navigator.share({title:i.t,text,url});return}await navigator.clipboard.writeText(text+' '+url);toast('Info barang disalin')}catch(_){}};
   const trk=$('#trk');trk.onscroll=()=>{$('#cnt').textContent=(Math.round(trk.scrollLeft/trk.clientWidth)+1)+'/'+i.img.length};}
 
 /* ---------- PBI-10 · Tandai selesai + ringkasan dampak ---------- */
@@ -582,6 +570,11 @@ async function renderProfile(){const c=myCampus();$('#pfAv').textContent=S.me.na
     :'<p class="muted">Belum ada barang. Posting lewat tombol +.</p>';}
 $('#pfItems').onclick=e=>{const b=e.target.closest('[data-id]');if(b)openDetail(b.dataset.id)};
 $('#adminBtn').onclick=()=>go('admin');
+$('#editName').onclick=()=>{modal(`<h2>Ubah nama</h2><p>Nama ini tampil di barang dan chat kamu.</p><input class="field" id="enI" maxlength="40" value="${esc(S.me.name)}"><div class="err" id="enE"></div><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="enOk">Simpan</button></div>`);
+  $('#enOk').onclick=async()=>{const v=$('#enI').value.trim();if(v.length<2){$('#enE').textContent='Nama minimal 2 huruf.';return}
+    $('#enOk').disabled=true;const {data,error}=await sb.from('profiles').update({name:v}).eq('id',S.uid).select(PROF_COLS).single();
+    if(error){$('#enE').textContent=errMsg(error);$('#enOk').disabled=false;return}
+    S.me=data;S.cache={};closeModal();toast('Nama disimpan');renderProfile()}};
 
 /* ---------- Panel admin ---------- */
 let admTab='ringkas';

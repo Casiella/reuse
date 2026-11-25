@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-25 · Siap dipakai
+- Label sprint dihapus dari aplikasi (badge beranda dan menu Profil).
+- Tombol terkunci diganti fitur jadi: Bagikan barang (share/salin) dan Ubah nama di Profil. Tombol favorit dihapus.
+- Beranda tidak lagi menampilkan barang contoh saat kampus masih kosong.
+- Perbaikan: daftar barang kosong karena relasi profil ganda (pemilik vs penerima).
+
 ## 2026-11-25 · Sprint 3 + panel admin
 - PBI-09: kartu kesepakatan waktu & tempat COD di chat (tabel `deals`, realtime).
 - PBI-10: tandai selesai + pilih penerima, ringkasan dampak, profil aktivitas, barang selesai disembunyikan dari beranda/cari/login.
