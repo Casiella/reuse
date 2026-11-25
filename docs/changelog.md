@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-25 · QRIS demo
+- QRIS demo bawaan (merchant fiktif "REUSE DEMO", tidak bisa menerima uang) supaya alur bayar Rp2.000 bisa dicoba tanpa QRIS asli (migrasi 009).
+- Layar bayar dan Panel admin menampilkan label "Mode demo". Upload QRIS asli di Panel admin → Bayar otomatis mematikan mode demo.
+
 ## 2026-11-25 · Biaya posting + QRIS nominal otomatis
 - Setiap posting dikenai biaya (default Rp2.000, diatur di Panel admin → Bayar). Berlaku setelah admin mengupload QRIS.
 - Admin upload gambar QRIS statis sekali; aplikasi membaca isinya dan membuat QRIS dengan nominal otomatis untuk setiap pembayaran (`js/qris.js`, pustaka `js/vendor/`).

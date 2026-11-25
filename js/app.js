@@ -85,10 +85,10 @@ const campusOf=id=>CAMPUS.find(c=>c.id===id)||{id,n:id||'Kampus',s:id||'Kampus',
 const activeCampuses=()=>CAMPUS.filter(c=>c.active!==false||c.id===S.me?.campus);
 const codName=i=>i.codPlace||campusOf(i.campus).cod[i.cod]||'Titik COD';
 const PAY_BUCKET='payment-proofs';
-let FEE=0,FEE_SET=0,QRIS=null,QRIS_NAME='ReUse',QRIS_PAYLOAD=null;
+let FEE=0,FEE_SET=0,QRIS=null,QRIS_NAME='ReUse',QRIS_PAYLOAD=null,QRIS_DEMO=false;
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=rej;document.head.appendChild(el)});
 async function loadSettings(){try{const {data}=await sb.from('settings').select('key,value');
-  (data||[]).forEach(r=>{if(r.key==='post_fee')FEE_SET=+r.value||0;if(r.key==='qris_url')QRIS=r.value||null;if(r.key==='qris_name')QRIS_NAME=r.value||'ReUse';if(r.key==='qris_payload')QRIS_PAYLOAD=r.value||null});
+  (data||[]).forEach(r=>{if(r.key==='post_fee')FEE_SET=+r.value||0;if(r.key==='qris_url')QRIS=r.value||null;if(r.key==='qris_name')QRIS_NAME=r.value||'ReUse';if(r.key==='qris_payload')QRIS_PAYLOAD=r.value||null;if(r.key==='qris_demo')QRIS_DEMO=r.value===true});
   FEE=QRIS||QRIS_PAYLOAD?FEE_SET:0}catch(_){}}
 async function loadCampuses(){try{const {data,error}=await sb.from('campuses').select('*').order('sort').order('name');
   if(!error&&data&&data.length)CAMPUS=data.map(c=>({id:c.id,n:c.name,s:c.short,loc:c.loc,dom:c.domain,cod:c.cod,area:c.areas||[],active:c.active,sort:c.sort}))}catch(_){}}
@@ -502,7 +502,7 @@ async function renderPay(id){payItem=id;payProof=null;const B=$('#payBody');B.in
     $('#payGo').onclick=()=>go('detail',{id});return}
   if(last&&last.status==='pending'){B.innerHTML=head+`<div class="paystate">${svg('qr')}<b>Bukti terkirim, menunggu verifikasi admin</b><p>Dikirim ${ago(Date.parse(last.created_at))} lalu · ${rp(last.amount)}. Barang otomatis tampil setelah disetujui.</p></div><button class="btn ghost" data-tab="home">Kembali ke beranda</button>`;return}
   B.innerHTML=head+(last&&last.status==='rejected'?`<div class="paystate bad"><b>Pembayaran sebelumnya ditolak</b><p>Alasan: ${esc((last.note||'Bukti tidak sesuai').replace(/[.\s]+$/,''))}. Silakan bayar lagi dan kirim ulang bukti.</p></div>`:'')+
-   `<div class="qrbox"><small>Bayar biaya posting</small><div class="amt">${rp(FEE)}</div>
+   `<div class="qrbox">${QRIS_DEMO?`<div class="demotag">Mode demo · QRIS contoh, tidak menerima uang sungguhan. Upload screenshot apa saja sebagai bukti.</div>`:''}<small>Bayar biaya posting</small><div class="amt">${rp(FEE)}</div>
      ${QRIS_PAYLOAD?`<img id="dynQr" alt="QRIS ${esc(QRIS_NAME)} nominal ${rp(FEE)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet. <b>Nominal ${rp(FEE)} sudah otomatis terisi</b>, tinggal konfirmasi bayar.</p>
        <a class="btn ghost" id="dynDl" download="QRIS-ReUse-${FEE}.png">Simpan gambar QRIS</a>`
      :QRIS?`<img src="${esc(QRIS)}" alt="QRIS ${esc(QRIS_NAME)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet, lalu ketik nominal <b>${rp(FEE)}</b>.</p>
@@ -677,11 +677,11 @@ async function admPay(B){await loadSettings();
   const urls={};await Promise.all((pend||[]).map(async p=>{const {data}=await sb.storage.from(PAY_BUCKET).createSignedUrl(p.proof_path,600);urls[p.id]=data?.signedUrl}));
   B.innerHTML=`<div class="tiles">${tile(st?.pending??0,'Menunggu verifikasi')}${tile(rp(st?.revenue??0),'Pemasukan',`${st?.approved??0} posting dibayar`)}</div>
    <h3 class="ah">Pengaturan QRIS</h3>
-   <div class="cpc"><div class="qrset">${QRIS?`<img src="${esc(QRIS)}" alt="QRIS">`:`<div class="qrnone">${svg('qr')}<span>Belum ada QRIS</span></div>`}
+   <div class="cpc"><div class="qrset">${QRIS&&!QRIS_DEMO?`<img src="${esc(QRIS)}" alt="QRIS">`:`<div class="qrnone">${svg('qr')}<span>${QRIS_DEMO?'QRIS demo':'Belum ada QRIS'}</span></div>`}
     <div><label class="lbl" for="stFee">Biaya per posting (Rp)</label><input class="field" id="stFee" inputmode="numeric" value="${FEE_SET}">
     <label class="lbl" for="stName">Nama di QRIS</label><input class="field" id="stName" maxlength="60" value="${esc(QRIS_NAME)}"></div></div>
     <label class="proof sm"><input type="file" accept="image/png,image/jpeg,image/webp" id="stQr" hidden><span id="stQrT">${svg('qr')}${QRIS?'Ganti gambar QRIS':'Upload gambar QRIS'}</span></label>
-    <p class="muted">${QRIS_PAYLOAD?'Nominal otomatis aktif: pembeli tidak perlu mengetik nominal.':QRIS?'QRIS ini belum terbaca, jadi penjual harus mengetik nominal. Upload ulang gambar yang lebih jelas.':''} Isi 0 untuk menggratiskan posting. Barang yang diposting admin selalu langsung tampil.</p>
+    ${QRIS_DEMO?`<div class="demotag">QRIS demo sedang aktif (tidak menerima uang). Upload QRIS asli untuk menerima pembayaran sungguhan.</div>`:''}<p class="muted">${QRIS_PAYLOAD?'Nominal otomatis aktif: pembeli tidak perlu mengetik nominal.':QRIS?'QRIS ini belum terbaca, jadi penjual harus mengetik nominal. Upload ulang gambar yang lebih jelas.':''} Isi 0 untuk menggratiskan posting. Barang yang diposting admin selalu langsung tampil.</p>
     <div class="err" id="stE"></div><button class="btn" id="stSave">Simpan pengaturan</button></div>
    <h3 class="ah">Menunggu verifikasi (${(pend||[]).length})</h3>`+
    ((pend||[]).length?pend.map(p=>`<div class="payrow" data-pid="${p.id}">
@@ -707,7 +707,7 @@ async function admPay(B){await loadSettings();
       const up=await sb.storage.from('site').upload(path,newQr,{contentType:newQr.type});
       if(up.error){E.textContent=errMsg(up.error);$('#stSave').disabled=false;return}
       url=sb.storage.from('site').getPublicUrl(path).data.publicUrl}
-    for(const [key,value] of [['post_fee',fee],['qris_name',name],['qris_url',url],...(newPayload?[['qris_payload',newPayload]]:[])]){
+    for(const [key,value] of [['post_fee',fee],['qris_name',name],['qris_url',url],...(newPayload?[['qris_payload',newPayload],['qris_demo',false]]:[])]){
       const {error}=await sb.from('settings').update({value}).eq('key',key);
       if(error){E.textContent=errMsg(error);$('#stSave').disabled=false;return}}
     toast('Pengaturan pembayaran disimpan');renderAdmin()};
