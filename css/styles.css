@@ -445,3 +445,46 @@ textarea.field{height:auto;padding:10px 14px;resize:vertical;font:inherit;font-s
 .cfchk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:14px}
 .cfchk input{accent-color:var(--g9);width:18px;height:18px}
 .modal{max-height:92vh;overflow-y:auto}
+/* ===== Biaya posting · QRIS ===== */
+.paybar{display:flex;gap:10px;align-items:center;background:#FFF4DC;border:1px solid #F2D49A;color:#7A4E00;border-radius:12px;padding:10px 12px;font-size:12px;margin-bottom:12px}
+.paybar.rejected{background:#FCEDEC;border-color:#F3C2BE;color:#8C1D18}
+.paybar svg{width:22px;height:22px;flex:none}
+.payitem{display:flex;gap:10px;align-items:center;padding:4px 0 14px}
+.payitem img{width:52px;height:52px;border-radius:12px;object-fit:cover;background:var(--g1)}
+.payitem b{display:block;font-size:14px}
+.payitem small{font-size:11.5px;color:var(--mut)}
+.qrbox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;text-align:center}
+.qrbox>small{font-size:12px;color:var(--mut);font-weight:600}
+.amt{font-size:30px;font-weight:800;color:var(--g9);margin:2px 0 12px}
+.amt.sm{font-size:18px;margin:4px 0 8px}
+.qrbox img{width:min(260px,100%);aspect-ratio:1;object-fit:contain;display:block;margin:0 auto 12px;border-radius:10px;background:#fff;image-rendering:pixelated}
+.qrbox p{font-size:12.5px;color:var(--mut);line-height:1.55;margin-bottom:12px}
+.qrnone{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 10px;color:var(--mut);font-size:12.5px;background:var(--g0);border-radius:12px}
+.qrnone svg{width:34px;height:34px}
+.proof{display:flex;align-items:center;justify-content:center;min-height:96px;border:1.5px dashed var(--g2);border-radius:14px;background:var(--g0);color:var(--g9);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;padding:10px;text-align:center}
+.proof span{display:flex;align-items:center;gap:8px}
+.proof svg{width:20px;height:20px}
+.proof img{max-height:220px;max-width:100%;border-radius:10px}
+.proof.sm{min-height:52px;margin-top:12px}
+.paystate{background:var(--g0);border-radius:14px;padding:16px;margin-bottom:14px;font-size:13px;color:var(--g9)}
+.paystate svg{width:26px;height:26px;display:block;margin-bottom:6px}
+.paystate p{font-size:12.5px;color:var(--mut);margin-top:4px;line-height:1.5}
+.paystate.ok{background:#E7F2E1}
+.paystate.bad{background:#FCEDEC;color:#8C1D18}
+.myi em.wait{background:#FFF4DC;color:#7A4E00}
+.qrset{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start}
+.qrset>img,.qrset>.qrnone{width:110px;height:110px;object-fit:contain;border-radius:10px;border:1px solid var(--line);padding:0}
+.qrset .lbl:first-child{margin-top:0}
+.payrow{display:flex;gap:12px;border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px;background:#fff}
+.proofimg{width:92px;height:140px;border-radius:10px;overflow:hidden;background:var(--g0);flex:none;display:grid;place-items:center;font-size:11px;color:var(--mut)}
+.proofimg img{width:100%;height:100%;object-fit:cover}
+.pinfo{flex:1;min-width:0;display:flex;flex-direction:column}
+.pinfo b{font-size:13px}
+.pinfo small{font-size:11px;color:var(--mut)}
+.pinfo .da{display:flex;gap:8px;margin-top:auto}
+.pinfo .da .btn{height:36px;font-size:12.5px}
+.pst{font-style:normal;font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px}
+.pst.approved{background:var(--g9);color:#fff}.pst.rejected{background:#FCEDEC;color:#8C1D18}
+.pendbar{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:#FFF4DC;border:1px solid #F2D49A;color:#7A4E00;border-radius:12px;padding:12px;font-size:12px;margin-top:12px}
+.pendbar svg{width:22px;height:22px;flex:none}
+a.btn{text-decoration:none}

@@ -296,10 +296,16 @@
   </div>
 </section>
 
+<!-- BAYAR BIAYA POSTING -->
+<section class="screen" id="pay">
+  <div class="top"><button class="ibtn" id="payBack" aria-label="Kembali"><span data-ic="left"></span></button><h1>Biaya posting</h1></div>
+  <div class="body" id="payBody"></div>
+</section>
+
 <!-- ADMIN -->
 <section class="screen" id="admin">
   <div class="top"><button class="ibtn" id="admBack" aria-label="Kembali"><span data-ic="left"></span></button><h1>Panel admin</h1></div>
-  <div class="chips" id="admTabs"><button class="chip" data-at="ringkas">Ringkasan</button><button class="chip" data-at="barang">Barang</button><button class="chip" data-at="pengguna">Pengguna</button><button class="chip" data-at="sundul">Sundul</button><button class="chip" data-at="kampus">Kampus</button></div>
+  <div class="chips" id="admTabs"><button class="chip" data-at="ringkas">Ringkasan</button><button class="chip" data-at="bayar">Bayar</button><button class="chip" data-at="barang">Barang</button><button class="chip" data-at="pengguna">Pengguna</button><button class="chip" data-at="sundul">Sundul</button><button class="chip" data-at="kampus">Kampus</button></div>
   <div class="admbody" id="admBody"></div>
 </section>
 
@@ -334,6 +340,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
+<script src="js/qris.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

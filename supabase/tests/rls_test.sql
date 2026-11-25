@@ -33,6 +33,9 @@ insert into auth.users values
  ('eeeeeeee-0000-0000-0000-000000000005','admin@unpad.ac.id');
 insert into public.admins values ('eeeeeeee-0000-0000-0000-000000000005');
 
+-- uji awal tanpa biaya posting; biaya diuji di bagian akhir
+update public.settings set value = '0'::jsonb where key = 'post_fee';
+
 \set A '''aaaaaaaa-0000-0000-0000-000000000001'''
 \set B '''bbbbbbbb-0000-0000-0000-000000000002'''
 \set X '''cccccccc-0000-0000-0000-000000000003'''
@@ -94,6 +97,29 @@ select pg_temp.uji('Kampus: admin tambah kampus', :Z, 'admin@unpad.ac.id', $q$in
 select pg_temp.uji('Kampus: domain harus .ac.id', :Z, 'admin@unpad.ac.id', $q$insert into campuses (id,name,short,domain,cod) values ('x1','Kampus X','X','x.com','{"X"}')$q$, 'fail');
 select pg_temp.uji('Kampus: titik COD tidak boleh kosong', :Z, 'admin@unpad.ac.id', $q$update campuses set cod='{}' where id='unpad'$q$, 'fail');
 select pg_temp.uji('Kampus: profil dengan kampus tak terdaftar ditolak', :G, 'g@unpad.ac.id', $q$insert into profiles values ('dddddddd-0000-0000-0000-000000000004','g@unpad.ac.id','G','ngasal')$q$, 'fail');
+
+-- Biaya posting Rp2.000 (QRIS manual)
+select pg_temp.uji('Bayar: tanpa QRIS, posting tetap gratis', :A, 'a@mail.unpad.ac.id', $q$insert into items (owner,campus,title,category,condition,mode,cod,photos) values ('aaaaaaaa-0000-0000-0000-000000000001','unpad','Tes gratis','Lainnya','Baik','Donate',0,'{x}') returning pay_status$q$, 'ok');
+update public.settings set value = '2000'::jsonb where key = 'post_fee';
+select pg_temp.uji('Bayar: biaya belum berlaku sebelum QRIS dipasang', :B, 'b@mail.unpad.ac.id', $q$select * from items where title='Tes gratis' and pay_status='approved'$q$, 'rows:1');
+update public.settings set value = '"000201010211...dummy"'::jsonb where key = 'qris_payload';
+select pg_temp.uji('Bayar: A posting barang baru', :A, 'a@mail.unpad.ac.id', $q$insert into items (id,owner,campus,title,category,condition,mode,price,cod,photos) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','unpad','Kipas','Elektronik','Baik','Sell',60000,0,'{x}')$q$, 'ok');
+select pg_temp.uji('Bayar: barang belum dibayar tersembunyi dari B', :B, 'b@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000002'$q$, 'rows:0');
+select pg_temp.uji('Bayar: A tetap melihat barangnya (pending)', :A, 'a@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000002' and pay_status='pending'$q$, 'rows:1');
+select pg_temp.uji('Bayar: A tidak bisa set lunas sendiri', :A, 'a@mail.unpad.ac.id', $q$update items set pay_status='approved' where id='11111111-0000-0000-0000-000000000002'$q$, 'fail');
+select pg_temp.uji('Bayar: bukti di folder orang lain ditolak', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001',2000,'bbbbbbbb-0000-0000-0000-000000000002/x.jpg')$q$, 'fail');
+select pg_temp.uji('Bayar: A kirim bukti (nominal diisi sistem)', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001',1,'aaaaaaaa-0000-0000-0000-000000000001/x.jpg')$q$, 'ok');
+select pg_temp.uji('Bayar: nominal tercatat Rp2.000', :A, 'a@mail.unpad.ac.id', $q$select * from payments where amount=2000$q$, 'rows:1');
+select pg_temp.uji('Bayar: tidak bisa kirim bukti ganda saat masih menunggu', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001',2000,'aaaaaaaa-0000-0000-0000-000000000001/y.jpg')$q$, 'fail');
+select pg_temp.uji('Bayar: B tidak bisa lihat bukti bayar A', :B, 'b@mail.unpad.ac.id', $q$select * from payments$q$, 'rows:0');
+select pg_temp.uji('Bayar: A tidak bisa menyetujui sendiri', :A, 'a@mail.unpad.ac.id', $q$update payments set status='approved' where item_id='11111111-0000-0000-0000-000000000002'$q$, 'fail');
+select pg_temp.uji('Bayar: admin menyetujui', :Z, 'admin@unpad.ac.id', $q$update payments set status='approved' where item_id='11111111-0000-0000-0000-000000000002'$q$, 'ok');
+select pg_temp.uji('Bayar: setelah disetujui, B bisa lihat barang', :B, 'b@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000002'$q$, 'rows:1');
+select pg_temp.uji('Bayar: keputusan tidak bisa diubah lagi', :Z, 'admin@unpad.ac.id', $q$update payments set status='rejected' where item_id='11111111-0000-0000-0000-000000000002'$q$, 'fail');
+select pg_temp.uji('Bayar: barang lunas tidak bisa dibayar lagi', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001',2000,'aaaaaaaa-0000-0000-0000-000000000001/z.jpg')$q$, 'fail');
+select pg_temp.uji('Bayar: A tidak bisa ubah biaya posting', :A, 'a@mail.unpad.ac.id', $q$update settings set value='0'::jsonb where key='post_fee'$q$, 'fail');
+select pg_temp.uji('Bayar: admin ubah gambar QRIS', :Z, 'admin@unpad.ac.id', $q$update settings set value='"https://x/qris.png"'::jsonb where key='qris_url'$q$, 'ok');
+select pg_temp.uji('Bayar: posting admin langsung tampil', :Z, 'admin@unpad.ac.id', $q$insert into items (owner,campus,title,category,condition,mode,cod,photos) values ('eeeeeeee-0000-0000-0000-000000000005','unpad','Info admin','Lainnya','Baik','Donate',0,'{x}') returning pay_status$q$, 'ok');
 
 select no, status, skenario, harap, dapat from hasil order by no;
 select count(*) filter (where status='PASS') as lulus, count(*) as total from hasil;

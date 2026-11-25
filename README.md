@@ -82,6 +82,13 @@ Lalu di Vercel: **Add New → Project →** pilih repo `reuse` → Framework Pre
 3. Perubahan database: tambahkan file baru `supabase/migrations/NNN_nama.sql` (jangan ubah yang lama), lalu jalankan di SQL Editor.
 4. Catat perubahan di `docs/changelog.md`.
 
+## Biaya posting (QRIS)
+
+1. Login sebagai admin → **Profil → Panel admin → Bayar**.
+2. Upload gambar QRIS statis (dari aplikasi merchant/e-wallet/bank). Aplikasi membaca isinya otomatis.
+3. Atur biaya per posting (default Rp2.000; isi 0 untuk gratis) → **Simpan pengaturan**.
+4. Penjual akan melihat QRIS dengan nominal yang sudah terisi, lalu upload bukti bayar. Setujui atau tolak di tab **Bayar**.
+
 ## Catatan teknis
 
 - **Keamanan** diatur oleh RLS di `supabase/migrations/001_sprint2_schema.sql`: hanya email `.ac.id` yang bisa membuat profil, posting hanya ke kampus sendiri, hanya pemilik yang bisa menghapus barangnya, dan chat hanya bisa dibaca dua pesertanya. *anon key* memang aman ditaruh di frontend.

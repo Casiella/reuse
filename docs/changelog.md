@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-25 · Biaya posting + QRIS nominal otomatis
+- Setiap posting dikenai biaya (default Rp2.000, diatur di Panel admin → Bayar). Berlaku setelah admin mengupload QRIS.
+- Admin upload gambar QRIS statis sekali; aplikasi membaca isinya dan membuat QRIS dengan nominal otomatis untuk setiap pembayaran (`js/qris.js`, pustaka `js/vendor/`).
+- Penjual upload bukti bayar; admin menyetujui/menolak. Barang baru tampil ke orang lain setelah disetujui.
+- Tabel `settings` & `payments`, bucket privat `payment-proofs`, bucket publik `site` (migrasi 007). Uji RLS: 66 skenario.
+
 ## 2026-11-25 · Kampus & titik COD diatur admin
 - Daftar kampus, titik COD (maks. 8), dan area kos pindah dari kode ke tabel `campuses` (migrasi 006).
 - Panel admin → tab **Kampus**: tambah kampus, ubah nama/domain/titik COD/area kos, nonaktifkan kampus.
