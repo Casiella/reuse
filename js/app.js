@@ -56,6 +56,8 @@ function errMsg(e){const m=String(e?.message||e||'');
   if(/expired|invalid.*(otp|token)|token.*(expired|invalid)/i.test(m))return 'Kode salah atau sudah kedaluwarsa.';
   if(/failed to fetch|network/i.test(m))return 'Tidak bisa terhubung ke server. Cek koneksi internet.';
   if(/row-level security/i.test(m))return 'Ditolak oleh server (aturan keamanan). Pastikan email .ac.id dan kampus sudah dipilih.';
+  if(/coerce the result|JSON object requested|0 rows/i.test(m))return 'Tidak bisa disimpan. Muat ulang halaman lalu coba lagi.';
+  if(/dijawab oleh pihak lain|sudah (accepted|declined|cancelled)/i.test(m))return 'Ajakan COD ini sudah dijawab. Muat ulang chat.';
   return m||'Terjadi kesalahan.';}
 
 /* ---------- Data statis ---------- */
@@ -205,7 +207,7 @@ async function afterLogin(user){
   S.uid=user.id;S.email=user.email;
   const {data:prof,error}=await sb.from('profiles').select(PROF_COLS).eq('id',user.id).maybeSingle();
   if(error){toast(errMsg(error))}
-  S.admin=false;sb.rpc('is_admin').then(({data})=>{S.admin=!!data;if(cur==='profile')renderProfile()});
+  S.admin=false;sb.rpc('is_admin').then(({data})=>{S.admin=!!data;refreshPending();if(cur==='profile')renderProfile()});
   if(prof?.campus){S.me=prof;S.filter.campus=prof.campus;startRealtime();go(S.q?'search':'home')}
   else go('campus');
 }
@@ -613,7 +615,9 @@ function startRealtime(){if(channel)return;
      if(cur==='chats')renderChats();else{$('#nDot').hidden=false;toast('Pesan baru: '+m.body.slice(0,40))}})
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'deals'},({new:d})=>onDeal(d,true))
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'deals'},({new:d})=>onDeal(d,false))
-   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'payments'},({new:p})=>{if(p.owner!==S.uid)return;
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'payments'},({new:p})=>{if(!S.admin||p.owner===S.uid)return;
+     refreshPending();toast('Bukti bayar baru masuk. Buka Profil → Panel admin.');if(cur==='admin'&&admTab==='bayar')renderAdmin()})
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'payments'},({new:p})=>{if(S.admin)refreshPending();if(p.owner!==S.uid)return;
      delete S.cache[p.item_id];toast(p.status==='approved'?'Pembayaran disetujui. Barangmu sudah tampil!':'Pembayaran ditolak'+(p.note?': '+p.note:''));
      if(cur==='pay'&&payItem===p.item_id)renderPay(p.item_id);else if(cur==='profile')renderProfile();})
    .subscribe();}
@@ -635,7 +639,10 @@ async function renderProfile(){const c=myCampus();$('#pfAv').textContent=S.me.na
   $('#pfItems').innerHTML=d.items.length?d.items.map(x=>`<button class="myi" data-id="${x.id}"><img src="${esc(x.img[0])}" alt=""><span><b>${esc(x.t)}</b><small>${x.m} · ${ago(x.ts)} lalu</small></span><em class="${x.pay!=='approved'?'wait':x.status==='done'?'done':''}">${x.pay==='pending'?'Belum tampil':x.pay==='rejected'?'Bayar ditolak':x.status==='done'?'Selesai':'Tersedia'}</em></button>`).join('')
     :'<p class="muted">Belum ada barang. Posting lewat tombol +.</p>';}
 $('#pfItems').onclick=e=>{const b=e.target.closest('[data-id]');if(b)openDetail(b.dataset.id)};
-$('#adminBtn').onclick=()=>go('admin');
+$('#adminBtn').onclick=()=>{if(PEND>0)admTab='bayar';go('admin')};
+let PEND=0;
+async function refreshPending(){if(!S.admin)return;const {data}=await sb.rpc('admin_pay_stats');PEND=data?.pending||0;
+  $('#pfDot').hidden=!PEND;$('#admCount').textContent=PEND?PEND+' menunggu':'';$('#admCount').hidden=!PEND}
 $('#editName').onclick=()=>{modal(`<h2>Ubah nama</h2><p>Nama ini tampil di barang dan chat kamu.</p><input class="field" id="enI" maxlength="40" value="${esc(S.me.name)}"><div class="err" id="enE"></div><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="enOk">Simpan</button></div>`);
   $('#enOk').onclick=async()=>{const v=$('#enI').value.trim();if(v.length<2){$('#enE').textContent='Nama minimal 2 huruf.';return}
     $('#enOk').disabled=true;const {data,error}=await sb.from('profiles').update({name:v}).eq('id',S.uid).select(PROF_COLS).single();
@@ -713,7 +720,7 @@ async function admPay(B){await loadSettings();
     toast('Pengaturan pembayaran disimpan');renderAdmin()};
   B.onclick=async e=>{const b=e.target.closest('[data-pdec]');if(!b)return;const pid=b.closest('[data-pid]').dataset.pid,st=b.dataset.pdec;
     const decide=async note=>{const {error}=await sb.from('payments').update({status:st,note:note||null}).eq('id',pid);
-      if(error){toast(errMsg(error));return}closeModal();toast(st==='approved'?'Disetujui. Barang sudah tampil.':'Pembayaran ditolak');renderAdmin()};
+      if(error){toast(errMsg(error));return}closeModal();toast(st==='approved'?'Disetujui. Barang sudah tampil.':'Pembayaran ditolak');refreshPending();renderAdmin()};
     if(st==='approved'){b.disabled=true;decide(null);return}
     modal(`<h2>Tolak pembayaran?</h2><p>Penjual akan melihat alasan ini dan bisa mengirim ulang bukti.</p><input class="field" id="rjI" maxlength="200" value="Nominal atau bukti tidak sesuai"><div class="row2" style="margin-top:14px"><button class="btn ghost" data-close>Batal</button><button class="btn" id="rjOk" style="background:#B3261E">Tolak</button></div>`);
     $('#rjOk').onclick=()=>{$('#rjOk').disabled=true;decide($('#rjI').value.trim())}};}
@@ -772,6 +779,10 @@ hydrate(document);
 (async()=>{
   if(!sb){go('setup');return}
   await Promise.all([loadCampuses(),loadSettings()]);
+  sb.auth.onAuthStateChange((ev,session)=>{const uid=session?.user?.id||null;
+    if(!S.uid)return;
+    if(!uid){if(channel){sb.removeChannel(channel);channel=null}S=fresh();S.admin=false;$('#cList').innerHTML='';go('onb');return}
+    if(uid!==S.uid){toast('Akun berganti di tab lain. Memuat ulang…');setTimeout(()=>location.reload(),700)}});
   const {data:{session}}=await sb.auth.getSession();
   if(session?.user)await afterLogin(session.user);else go('onb');
 })();

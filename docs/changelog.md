@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-25 · Perbaikan
+- Perbaikan: jika akun berganti di tab lain, tab ini ikut memuat ulang (sebelumnya "Tandai selesai" & "Terima COD" gagal karena memakai akun dari tab lain).
+- Pesan error teknis diganti kalimat yang jelas.
+- Admin: titik merah di tab Profil dan angka "N menunggu" di tombol Panel admin; tombolnya langsung membuka tab Bayar.
+
 ## 2026-11-25 · QRIS demo
 - QRIS demo bawaan (merchant fiktif "REUSE DEMO", tidak bisa menerima uang) supaya alur bayar Rp2.000 bisa dicoba tanpa QRIS asli (migrasi 009).
 - Layar bayar dan Panel admin menampilkan label "Mode demo". Upload QRIS asli di Panel admin → Bayar otomatis mematikan mode demo.
