@@ -35,7 +35,7 @@
 - Admin melihat total klik, pengguna unik, persentase dari semua pengguna, dan barang yang paling sering disundul.
 
 **PBI-12 · Keamanan & bug fixing**
-- 39 skenario RLS diuji dan lulus: `supabase/tests/rls_test.sql` (lihat cara menjalankan di bawah).
+- 47 skenario RLS diuji dan lulus: `supabase/tests/rls_test.sql` (lihat cara menjalankan di bawah).
 - **Bug ditemukan & diperbaiki:** email semua pengguna bisa dibaca akun mana pun lewat API. Sekarang kolom email tertutup (migrasi `005_hide_emails.sql`); hanya admin yang bisa melihat email lewat fungsi `admin_users()`.
 - Fungsi admin tidak bisa dipanggil tanpa login (migrasi `004`).
 - Saran dari Supabase yang belum dikerjakan: aktifkan *Leaked password protection* di Authentication → Settings.

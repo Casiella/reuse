@@ -49,7 +49,7 @@ const OTPN=+CFG.OTP_LENGTH||6;
 const BUCKET='item-photos';
 const ITEM_SEL='*, profiles!items_owner_fkey(name)';
 const PROF_COLS='id,name,campus,created_at';
-const CONV_SEL='*, items(id,title,photos,mode,price,wish,cod,campus), buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name)';
+const CONV_SEL='*, items(id,title,photos,mode,price,wish,cod,cod_place,campus,status), buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name)';
 function errMsg(e){const m=String(e?.message||e||'');
   if(/rate limit|too many|security purposes/i.test(m))return 'Terlalu sering meminta kode. Tunggu sebentar lalu coba lagi.';
   if(/expired|invalid.*(otp|token)|token.*(expired|invalid)/i.test(m))return 'Kode salah atau sudah kedaluwarsa.';
@@ -58,7 +58,7 @@ function errMsg(e){const m=String(e?.message||e||'');
   return m||'Terjadi kesalahan.';}
 
 /* ---------- Data statis ---------- */
-const CAMPUS=[
+let CAMPUS=[
  {id:'unpad',n:'Universitas Padjadjaran',s:'Unpad',loc:'Jatinangor',dom:'unpad.ac.id',cod:['Gerbang Lama','Masjid Raya Unpad','Bale Santika','Halte Bus Kampus'],area:['Sayang','Ciseke','Caringin','Hegarmanah','Cikuda']},
  {id:'itb',n:'Institut Teknologi Bandung',s:'ITB',loc:'Ganesha, Bandung',dom:'itb.ac.id',cod:['Gerbang Depan ITB','Masjid Salman','Perpustakaan Pusat','Sunken Court'],area:['Cisitu','Tubagus Ismail','Sekeloa','Dago','Plesiran']},
  {id:'ui',n:'Universitas Indonesia',s:'UI',loc:'Depok',dom:'ui.ac.id',cod:['Stasiun UI','Masjid UI','Perpustakaan UI','Halte Bikun FIB'],area:['Kukusan','Kukusan Teknik','Pondok Cina','Margonda','Beji']},
@@ -66,7 +66,7 @@ const CAMPUS=[
  {id:'ipb',n:'IPB University',s:'IPB',loc:'Dramaga, Bogor',dom:'ipb.ac.id',cod:['Gerbang Dramaga','Masjid Al-Hurriyyah','Perpustakaan LSI','Gymnasium'],area:['Babakan Raya','Babakan Tengah','Bara','Cibanteng','Perwira']},
  {id:'tel',n:'Telkom University',s:'Tel-U',loc:'Bandung',dom:'telkomuniversity.ac.id',cod:['Gerbang Utama','Masjid Syamsul Ulum','Open Library','Danau Tel-U'],area:['Sukapura','Sukabirus','PGA','Bojongsoang','Ciganitri']}
 ];
-const PINPOS=[[22,30],[70,26],[34,74],[78,70]];
+const PINPOS=[[22,30],[70,26],[34,74],[78,70],[50,50],[12,58],[88,44],[56,14]];
 const CATS=['Buku & Modul','Elektronik','Pakaian','Perabot Kos','Alat Tulis','Lainnya'];
 const MODES=['Semua','Sell','Swap','Donate'];
 const SEED=[
@@ -80,9 +80,13 @@ const SEED=[
 /* ---------- State ---------- */
 const fresh=()=>({onb:0,email:'',uid:null,me:null,filter:{campus:null,area:'',mode:'Semua'},cache:{},q:'',cat:'Semua'});
 let S=fresh();
-const campusOf=id=>CAMPUS.find(c=>c.id===id)||CAMPUS[0];
+const campusOf=id=>CAMPUS.find(c=>c.id===id)||{id,n:id||'Kampus',s:id||'Kampus',loc:'',dom:'',cod:[],area:[]};
+const activeCampuses=()=>CAMPUS.filter(c=>c.active!==false||c.id===S.me?.campus);
+const codName=i=>i.codPlace||campusOf(i.campus).cod[i.cod]||'Titik COD';
+async function loadCampuses(){try{const {data,error}=await sb.from('campuses').select('*').order('sort').order('name');
+  if(!error&&data&&data.length)CAMPUS=data.map(c=>({id:c.id,n:c.name,s:c.short,loc:c.loc,dom:c.domain,cod:c.cod,area:c.areas||[],active:c.active,sort:c.sort}))}catch(_){}}
 const myCampus=()=>campusOf(S.me?.campus);
-const mapItem=r=>({id:r.id,owner:r.owner,t:r.title,k:r.category,c:r.condition,m:r.mode,p:r.price,w:r.wish,cod:r.cod,area:r.area,d:r.description,
+const mapItem=r=>({id:r.id,owner:r.owner,t:r.title,k:r.category,c:r.condition,m:r.mode,p:r.price,w:r.wish,cod:r.cod,codPlace:r.cod_place,area:r.area,d:r.description,
   img:r.photos||[],by:r.profiles?.name||'Mahasiswa',campus:r.campus,ts:Date.parse(r.created_at),mine:r.owner===S.uid,
   status:r.status||'available',takenBy:r.taken_by,doneAt:r.done_at?Date.parse(r.done_at):null});
 const cacheIt=i=>(S.cache[i.id]=i);
@@ -201,8 +205,8 @@ async function afterLogin(user){
 
 /* ---------- Pilih kampus → simpan profil ---------- */
 function renderCampus(){const dom=S.email.split('@')[1]||'';
-  const sug=CAMPUS.find(c=>dom.endsWith(c.dom));
-  $('#campL').innerHTML=CAMPUS.map(c=>`<label><input type="radio" name="camp" value="${c.id}" ${(S.me?.campus||sug?.id)===c.id?'checked':''}><span class="ini">${c.s}</span><span><b>${c.n}</b><span>${c.loc}</span></span>${sug?.id===c.id?'<em class="sug" style="font-style:normal">Sesuai email</em>':''}</label>`).join('');
+  const sug=activeCampuses().find(c=>c.dom&&dom.endsWith(c.dom));
+  $('#campL').innerHTML=activeCampuses().map(c=>`<label><input type="radio" name="camp" value="${c.id}" ${(S.me?.campus||sug?.id)===c.id?'checked':''}><span class="ini">${c.s}</span><span><b>${c.n}</b><span>${c.loc}</span></span>${sug?.id===c.id?'<em class="sug" style="font-style:normal">Sesuai email</em>':''}</label>`).join('');
   $('#campE').textContent='';}
 $('#campL').addEventListener('change',()=>$('#campE').textContent='');
 $('#campB').onclick=async()=>{const v=document.querySelector('input[name=camp]:checked');
@@ -223,7 +227,7 @@ function ago(ts){const m=Math.max(1,Math.round((Date.now()-ts)/6e4));return m<60
 const skel=n=>Array.from({length:n},()=>'<div class="skel"></div>').join('');
 function cardHTML(i){const c=campusOf(i.campus);
   return `<button class="card" data-id="${i.id}"><div class="thumb"><img src="${esc(i.img[0])}" alt="" loading="lazy"><span class="mtag m-${i.m}">${i.m}</span>${i.sample?'<span class="smp">Contoh</span>':''}</div>
-   <div class="ci"><b>${esc(i.t)}</b><div class="pr">${priceTxt(i)}</div><div class="meta">${svg('pin')}${esc(i.area?i.area+' · '+c.cod[i.cod]:c.cod[i.cod])}</div>
+   <div class="ci"><b>${esc(i.t)}</b><div class="pr">${priceTxt(i)}</div><div class="meta">${svg('pin')}${esc(i.area?i.area+' · '+codName(i):codName(i))}</div>
    <div class="meta"><span class="vb">${VB}</span>${esc(i.by)}${i.mine?' (kamu)':''} · ${ago(i.ts)}</div></div></button>`;}
 let homeTok=0;
 async function renderHome(){const f=S.filter,c=campusOf(f.campus),mine=f.campus===S.me.campus;
@@ -249,7 +253,7 @@ function openDetail(id){prev={s:cur,o:cur==='chat'?{id:curConv}:{}};go('detail',
 $('#filterBtn').onclick=()=>{let m=S.filter.mode;
   const areaOpts=cid=>'<option value="">Semua area</option>'+campusOf(cid).area.map(a=>`<option ${S.filter.area===a&&S.filter.campus===cid?'selected':''}>${esc(a)}</option>`).join('');
   modal(`<div class="fsheet"><h2>Filter barang</h2>
-   <label class="lbl" for="fC">Kampus</label><select class="field" id="fC">${CAMPUS.map(c=>`<option value="${c.id}" ${c.id===S.filter.campus?'selected':''}>${esc(c.n)}${c.id===S.me.campus?' (kampusmu)':''}</option>`).join('')}</select>
+   <label class="lbl" for="fC">Kampus</label><select class="field" id="fC">${activeCampuses().map(c=>`<option value="${c.id}" ${c.id===S.filter.campus?'selected':''}>${esc(c.n)}${c.id===S.me.campus?' (kampusmu)':''}</option>`).join('')}</select>
    <label class="lbl" for="fA">Area kos</label><select class="field" id="fA">${areaOpts(S.filter.campus)}</select>
    <span class="lbl">Mode</span><div class="chips" id="fM"></div>
    <div class="row2"><button class="btn ghost" id="fReset">Reset</button><button class="btn" id="fApply">Terapkan</button></div></div>`);
@@ -331,7 +335,7 @@ $('#postF').onsubmit=async e=>{e.preventDefault();if(P.busy)return;const er={};
       uploaded.push(path);}
     B.textContent='Menyimpan…';
     const {data,error}=await sb.from('items').insert({owner:S.uid,campus:S.me.campus,title:t,category:k,condition:c,mode:P.mode,
-      price:P.mode==='Sell'?price:null,wish:P.mode==='Swap'?w:null,cod:P.cod,area:$('#pA').value||null,description:$('#pD').value.trim()||null,
+      price:P.mode==='Sell'?price:null,wish:P.mode==='Swap'?w:null,cod:P.cod,cod_place:myCampus().cod[P.cod],area:$('#pA').value||null,description:$('#pD').value.trim()||null,
       photos:uploaded.map(p=>sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl)}).select(ITEM_SEL).single();
     if(error)throw error;
     const it=cacheIt(mapItem(data));P.busy=false;toast('Barang berhasil diposting');prev={s:'home',o:{}};go('detail',{id:it.id});
@@ -359,7 +363,7 @@ async function renderDetail(id){const el=$('#detail');
    <div style="font-size:11.5px;color:var(--mut);margin-top:6px">Diposting ${ago(i.ts)} lalu</div>
    <div class="box"><div class="seller"><div class="av">${esc(i.by[0])}</div><div><b>${esc(i.by)}${i.mine?' (kamu)':''} <span class="vb">${VB}</span></b><small>${c.s}</small></div></div>
     <div class="verif">${VB}<span><b>Mahasiswa terverifikasi</b><br>Email kampus @${esc(c.dom)} sudah dikonfirmasi lewat OTP.</span></div></div>
-   <div class="box"><h3>Titik COD</h3><div class="codrow"><div class="ic">${svg('pin')}</div><div><b>${esc(c.cod[i.cod])}</b><span>${c.n} · ${c.loc}</span></div></div></div>
+   <div class="box"><h3>Titik COD</h3><div class="codrow"><div class="ic">${svg('pin')}</div><div><b>${esc(codName(i))}</b><span>${c.n} · ${c.loc}</span></div></div></div>
    ${i.d?`<div class="box"><h3>Deskripsi</h3><p>${esc(i.d)}</p></div>`:''}
   </div>
   <div class="dfoot">${i.sample?`<button class="btn" disabled>Barang contoh · tidak bisa chat</button>`
@@ -457,7 +461,7 @@ function proposeDeal(){if(!curCv)return;const it=curCv.items||{},c=campusOf(it.c
   modal(`<div class="mi" data-ic="cal"></div><h2>Atur waktu & tempat COD</h2>
    <label class="lbl" for="dlD">Tanggal</label><input class="field" type="date" id="dlD" value="${dd}" min="${new Date().toISOString().slice(0,10)}">
    <label class="lbl" for="dlT">Jam</label><input class="field" type="time" id="dlT" value="13:00">
-   <label class="lbl" for="dlP">Tempat</label><select class="field" id="dlP">${c.cod.map((n,k)=>`<option ${k===it.cod?'selected':''}>${esc(n)}</option>`).join('')}<option value="">Tempat lain…</option></select>
+   <label class="lbl" for="dlP">Tempat</label><select class="field" id="dlP">${[...new Set([it.cod_place,...c.cod].filter(Boolean))].map(n=>`<option ${n===(it.cod_place||c.cod[it.cod])?'selected':''}>${esc(n)}</option>`).join('')}<option value="">Tempat lain…</option></select>
    <input class="field" id="dlO" placeholder="Tulis tempat lain" maxlength="80" hidden style="margin-top:8px">
    <div class="err" id="dlE"></div>
    <div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="dlOk">Kirim ajakan</button></div>`);
@@ -506,7 +510,7 @@ function appendMsg(m,pending){if(m.id&&seenMsg.has(m.id))return;if(m.id)seenMsg.
   const d=dayTxt(m.created_at);if(d!==lastDay){lastDay=d;M.insertAdjacentHTML('beforeend',`<div class="mday">${d}</div>`)}
   M.insertAdjacentHTML('beforeend',`<div class="msg ${m.sender===S.uid?'me':''} ${pending?'pending':''}" ${m.id?`data-mid="${m.id}"`:''}>${esc(m.body)}<time>${hm(m.created_at)}</time></div>`);
   M.scrollTop=M.scrollHeight;}
-function templates(cv){const it=cv.items||{},c=campusOf(it.campus),cod=c.cod[it.cod]||'titik COD';
+function templates(cv){const it=cv.items||{},cod=it.cod_place||campusOf(it.campus).cod[it.cod]||'titik COD';
   if(cv.seller_id===S.uid)return['Masih ada, kak!',`Bisa ketemu di ${cod} ya.`,'Kapan kamu bisa COD?'];
   return[`Halo, ${it.title||'barang ini'} masih ada?`,`Bisa COD di ${cod}?`,
     it.mode==='Sell'?'Harganya masih bisa nego?':it.mode==='Swap'?`Aku punya barang buat ditukar, boleh kirim fotonya?`:'Boleh aku ambil barangnya?'];}
@@ -581,7 +585,7 @@ let admTab='ringkas';
 async function renderAdmin(){if(!S.admin){go('profile');return}
   document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('on',b.dataset.at===admTab));
   const B=$('#admBody');B.innerHTML=skel(4);
-  try{({ringkas:admSummary,barang:admItems,pengguna:admUsers,sundul:admSundul}[admTab])(B)}catch(e){B.innerHTML=`<div class="empty">${esc(errMsg(e))}</div>`}}
+  try{({ringkas:admSummary,barang:admItems,pengguna:admUsers,sundul:admSundul,kampus:admCampus}[admTab])(B)}catch(e){B.innerHTML=`<div class="empty">${esc(errMsg(e))}</div>`}}
 $('#admTabs').onclick=e=>{const b=e.target.closest('[data-at]');if(b){admTab=b.dataset.at;renderAdmin()}};
 $('#admBack').onclick=()=>go('profile');
 const tile=(n,l,s2)=>`<div class="tile"><b>${n}</b><small>${l}</small>${s2?`<em>${s2}</em>`:''}</div>`;
@@ -600,6 +604,42 @@ async function admItems(B){const {data,error}=await sb.from('items').select(ITEM
     modal(`<h2>Hapus sebagai admin?</h2><p>“${esc(x.t)}” milik ${esc(x.by)} akan dihapus dari semua akun, termasuk chat terkait. Tindakan ini tidak bisa dibatalkan.</p><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="adOk" style="background:#B3261E">Hapus</button></div>`);
     $('#adOk').onclick=async()=>{$('#adOk').disabled=true;const {error}=await sb.from('items').delete().eq('id',x.id);
       if(error){toast(errMsg(error));$('#adOk').disabled=false;return}delete S.cache[x.id];closeModal();toast('Barang dihapus');renderAdmin()}};}
+async function admCampus(B){await loadCampuses();
+  B.innerHTML=`<p class="muted">Daftar kampus, titik COD, dan area kos yang muncul di aplikasi. Kampus nonaktif tidak bisa dipilih pengguna baru.</p>
+   <button class="btn" id="cpAdd" style="margin-bottom:12px">${svg('plus')}Tambah kampus</button>`+
+   CAMPUS.map(c=>`<div class="cpc ${c.active===false?'off':''}"><div class="cph"><span class="ini">${esc(c.s)}</span><span><b>${esc(c.n)}</b><small>${esc(c.loc)} · @${esc(c.dom)}${c.active===false?' · nonaktif':''}</small></span><button class="btn ghost" data-cp="${esc(c.id)}">Ubah</button></div>
+    <div class="cpl">${svg('pin')}<span>${c.cod.map(esc).join(' · ')}</span></div>
+    ${c.area.length?`<div class="cpl">${svg('home')}<span>${c.area.map(esc).join(' · ')}</span></div>`:''}</div>`).join('');
+  $('#cpAdd').onclick=()=>campusForm(null);
+  B.onclick=e=>{const b=e.target.closest('[data-cp]');if(b)campusForm(CAMPUS.find(c=>c.id===b.dataset.cp))};}
+function campusForm(c){const isNew=!c;c=c||{id:'',n:'',s:'',loc:'',dom:'',cod:[],area:[],active:true};
+  modal(`<h2>${isNew?'Tambah kampus':'Ubah '+esc(c.s)}</h2>
+   ${isNew?`<label class="lbl" for="cfId">Kode kampus <small>(huruf kecil, tidak bisa diubah)</small></label><input class="field" id="cfId" maxlength="20" placeholder="mis. unair">`:''}
+   <label class="lbl" for="cfN">Nama lengkap</label><input class="field" id="cfN" maxlength="80" value="${esc(c.n)}" placeholder="Universitas Airlangga">
+   <div class="row2"><div><label class="lbl" for="cfS">Singkatan</label><input class="field" id="cfS" maxlength="16" value="${esc(c.s)}" placeholder="Unair"></div>
+    <div><label class="lbl" for="cfL">Lokasi</label><input class="field" id="cfL" maxlength="40" value="${esc(c.loc)}" placeholder="Surabaya"></div></div>
+   <label class="lbl" for="cfD">Domain email</label><input class="field" id="cfD" maxlength="60" value="${esc(c.dom)}" placeholder="unair.ac.id">
+   <label class="lbl" for="cfC">Titik COD <small>(satu per baris, maks. 8)</small></label><textarea class="field" id="cfC" rows="5">${esc(c.cod.join('\n'))}</textarea>
+   <label class="lbl" for="cfA">Area kos <small>(satu per baris, boleh kosong)</small></label><textarea class="field" id="cfA" rows="4">${esc(c.area.join('\n'))}</textarea>
+   <label class="cfchk"><input type="checkbox" id="cfOn" ${c.active!==false?'checked':''}> Aktif (bisa dipilih pengguna)</label>
+   <p class="muted">Mengubah titik COD tidak mengubah barang yang sudah diposting.</p>
+   <div class="err" id="cfE"></div>
+   <div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="cfOk">Simpan</button></div>`);
+  $('#cfOk').onclick=async()=>{const lines=v=>[...new Set(v.split('\n').map(x=>x.trim()).filter(Boolean))];
+    const row={name:$('#cfN').value.trim(),short:$('#cfS').value.trim(),loc:$('#cfL').value.trim(),domain:$('#cfD').value.trim().toLowerCase().replace(/^@/,''),
+      cod:lines($('#cfC').value),areas:lines($('#cfA').value),active:$('#cfOn').checked};
+    const E=$('#cfE');
+    if(isNew){row.id=$('#cfId').value.trim().toLowerCase();if(!/^[a-z0-9-]{2,20}$/.test(row.id)){E.textContent='Kode kampus 2–20 huruf kecil/angka, tanpa spasi.';return}
+      if(CAMPUS.some(x=>x.id===row.id)){E.textContent='Kode kampus sudah dipakai.';return}}
+    if(row.name.length<3){E.textContent='Isi nama kampus.';return}
+    if(row.short.length<2){E.textContent='Isi singkatan.';return}
+    if(!/\.ac\.id$/.test(row.domain)){E.textContent='Domain email harus berakhiran .ac.id.';return}
+    if(!row.cod.length||row.cod.length>8){E.textContent='Isi 1–8 titik COD.';return}
+    if(row.areas.length>12){E.textContent='Maksimal 12 area kos.';return}
+    $('#cfOk').disabled=true;
+    const {error}=isNew?await sb.from('campuses').insert({...row,sort:100}):await sb.from('campuses').update(row).eq('id',c.id);
+    if(error){E.textContent=errMsg(error);$('#cfOk').disabled=false;return}
+    closeModal();toast(isNew?'Kampus ditambahkan':'Kampus disimpan');renderAdmin()};}
 async function admUsers(B){const {data,error}=await sb.rpc('admin_users');if(error)throw error;
   B.innerHTML=`<p class="muted">${data.length} pengguna terdaftar.</p><div class="atable u"><div class="ar head"><span>Nama</span><span>Kampus</span><span>Barang</span></div>${data.map(u=>`<div class="ar"><span><b>${esc(u.name)}${u.is_admin?' <em class="adm">admin</em>':''}</b><small>${esc(u.email)} · gabung ${ago(Date.parse(u.created_at))} lalu</small></span><span>${esc(campusOf(u.campus).s)}</span><span>${u.items}${u.done?` <small>(${u.done} selesai)</small>`:''}</span></div>`).join('')}</div>`;}
 async function admSundul(B){const {data,error}=await sb.from('sundul_clicks').select('item_id,user_id,created_at').order('created_at',{ascending:false}).limit(1000);if(error)throw error;
@@ -618,6 +658,7 @@ $('#logout').onclick=async()=>{if(channel){sb.removeChannel(channel);channel=nul
 hydrate(document);
 (async()=>{
   if(!sb){go('setup');return}
+  await loadCampuses();
   const {data:{session}}=await sb.auth.getSession();
   if(session?.user)await afterLogin(session.user);else go('onb');
 })();

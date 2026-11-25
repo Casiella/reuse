@@ -429,3 +429,19 @@ img.kos-bg{object-fit:cover;object-position:center 40%;filter:blur(1.5px) satura
 .adel svg{width:16px;height:16px}
 .deal .dst{white-space:nowrap}
 .deal .dh b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* admin: kampus */
+#admTabs{overflow-x:auto;flex-wrap:nowrap}
+.cpc{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff}
+.cpc.off{opacity:.6}
+.cph{display:flex;align-items:center;gap:10px}
+.cph .ini{width:44px;height:44px;border-radius:12px;background:var(--g1);color:var(--g9);display:grid;place-items:center;font-size:11px;font-weight:700;flex:none;text-align:center}
+.cph>span:nth-child(2){flex:1;min-width:0}
+.cph b{display:block;font-size:13px}
+.cph small{font-size:11px;color:var(--mut)}
+.cph .btn{width:auto;height:34px;padding:0 14px;font-size:12px;flex:none}
+.cpl{display:flex;gap:8px;font-size:11.5px;color:var(--ink);margin-top:8px;line-height:1.45}
+.cpl svg{width:14px;height:14px;color:var(--mut);flex:none;margin-top:2px}
+textarea.field{height:auto;padding:10px 14px;resize:vertical;font:inherit;font-size:13px;line-height:1.5}
+.cfchk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:14px}
+.cfchk input{accent-color:var(--g9);width:18px;height:18px}
+.modal{max-height:92vh;overflow-y:auto}

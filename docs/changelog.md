@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-25 · Kampus & titik COD diatur admin
+- Daftar kampus, titik COD (maks. 8), dan area kos pindah dari kode ke tabel `campuses` (migrasi 006).
+- Panel admin → tab **Kampus**: tambah kampus, ubah nama/domain/titik COD/area kos, nonaktifkan kampus.
+- Nama titik COD disimpan di tiap barang (`cod_place`), jadi barang lama tidak berubah tempat saat daftar COD diedit.
+- Uji RLS bertambah jadi 47 skenario (semua lulus).
+
 ## 2026-11-25 · Siap dipakai
 - Label sprint dihapus dari aplikasi (badge beranda dan menu Profil).
 - Tombol terkunci diganti fitur jadi: Bagikan barang (share/salin) dan Ubah nama di Profil. Tombol favorit dihapus.

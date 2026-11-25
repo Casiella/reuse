@@ -86,5 +86,14 @@ select pg_temp.uji('Privasi: B tetap bisa baca nama penjual', :B, 'b@mail.unpad.
 select pg_temp.uji('Privasi: daftar pengguna ditolak untuk non-admin', :A, 'a@mail.unpad.ac.id', $q$select * from admin_users()$q$, 'fail');
 select pg_temp.uji('Privasi: admin bisa lihat daftar pengguna', :Z, 'admin@unpad.ac.id', $q$select * from admin_users()$q$, 'rows:4');
 
+select pg_temp.uji('Kampus: semua akun bisa baca daftar kampus', :A, 'a@mail.unpad.ac.id', $q$select * from campuses$q$, 'rows:6');
+select pg_temp.uji('Kampus: A tidak bisa ubah titik COD', :A, 'a@mail.unpad.ac.id', $q$update campuses set cod='{"Rumah A"}' where id='unpad'$q$, 'fail');
+select pg_temp.uji('Kampus: A tidak bisa tambah kampus', :A, 'a@mail.unpad.ac.id', $q$insert into campuses (id,name,short,domain,cod) values ('palsu','Kampus Palsu','KP','palsu.ac.id','{"X"}')$q$, 'fail');
+select pg_temp.uji('Kampus: admin ubah titik COD', :Z, 'admin@unpad.ac.id', $q$update campuses set cod='{"Gerbang Lama","Masjid Raya Unpad","Bale Santika","Halte Bus Kampus","Kantin Fikom"}' where id='unpad'$q$, 'ok');
+select pg_temp.uji('Kampus: admin tambah kampus', :Z, 'admin@unpad.ac.id', $q$insert into campuses (id,name,short,loc,domain,cod) values ('unair','Universitas Airlangga','Unair','Surabaya','unair.ac.id','{"Gerbang Kampus C"}')$q$, 'ok');
+select pg_temp.uji('Kampus: domain harus .ac.id', :Z, 'admin@unpad.ac.id', $q$insert into campuses (id,name,short,domain,cod) values ('x1','Kampus X','X','x.com','{"X"}')$q$, 'fail');
+select pg_temp.uji('Kampus: titik COD tidak boleh kosong', :Z, 'admin@unpad.ac.id', $q$update campuses set cod='{}' where id='unpad'$q$, 'fail');
+select pg_temp.uji('Kampus: profil dengan kampus tak terdaftar ditolak', :G, 'g@unpad.ac.id', $q$insert into profiles values ('dddddddd-0000-0000-0000-000000000004','g@unpad.ac.id','G','ngasal')$q$, 'fail');
+
 select no, status, skenario, harap, dapat from hasil order by no;
 select count(*) filter (where status='PASS') as lulus, count(*) as total from hasil;
