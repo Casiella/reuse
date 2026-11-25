@@ -47,7 +47,7 @@ const sb=configured?window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_A
 const PWMODE=CFG.AUTH_MODE==='password';
 const OTPN=+CFG.OTP_LENGTH||6;
 const BUCKET='item-photos';
-const ITEM_SEL='*, profiles(name)';
+const ITEM_SEL='*, profiles!items_owner_fkey(name)';
 const PROF_COLS='id,name,campus,created_at';
 const CONV_SEL='*, items(id,title,photos,mode,price,wish,cod,campus), buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name)';
 function errMsg(e){const m=String(e?.message||e||'');
