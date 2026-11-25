@@ -27,6 +27,10 @@ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 
 sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
 send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
 eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+up:'<path d="M12 19V5M5 12l7-7 7 7"/>',
+chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6M16 4.5a3.5 3.5 0 0 1 0 7M22 20c0-3-2-5.2-5-5.8"/>',
 trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
 };
 const svg=(n,c='i')=>`<svg class="${c}" viewBox="0 0 24 24">${IC[n]||''}</svg>`;
@@ -44,6 +48,7 @@ const PWMODE=CFG.AUTH_MODE==='password';
 const OTPN=+CFG.OTP_LENGTH||6;
 const BUCKET='item-photos';
 const ITEM_SEL='*, profiles(name)';
+const PROF_COLS='id,name,campus,created_at';
 const CONV_SEL='*, items(id,title,photos,mode,price,wish,cod,campus), buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name)';
 function errMsg(e){const m=String(e?.message||e||'');
   if(/rate limit|too many|security purposes/i.test(m))return 'Terlalu sering meminta kode. Tunggu sebentar lalu coba lagi.';
@@ -78,12 +83,13 @@ let S=fresh();
 const campusOf=id=>CAMPUS.find(c=>c.id===id)||CAMPUS[0];
 const myCampus=()=>campusOf(S.me?.campus);
 const mapItem=r=>({id:r.id,owner:r.owner,t:r.title,k:r.category,c:r.condition,m:r.mode,p:r.price,w:r.wish,cod:r.cod,area:r.area,d:r.description,
-  img:r.photos||[],by:r.profiles?.name||'Mahasiswa',campus:r.campus,ts:Date.parse(r.created_at),mine:r.owner===S.uid});
+  img:r.photos||[],by:r.profiles?.name||'Mahasiswa',campus:r.campus,ts:Date.parse(r.created_at),mine:r.owner===S.uid,
+  status:r.status||'available',takenBy:r.taken_by,doneAt:r.done_at?Date.parse(r.done_at):null});
 const cacheIt=i=>(S.cache[i.id]=i);
 const seedFor=cid=>SEED.map((x,i)=>cacheIt({...x,id:'sample-'+cid+'-'+i,campus:cid,ts:Date.now()-(i+1)*3600e3*(i+2),sample:true}));
 
 async function fetchItems({campus,area,mode,cat,q}){
-  let qb=sb.from('items').select(ITEM_SEL).eq('campus',campus).order('created_at',{ascending:false}).limit(60);
+  let qb=sb.from('items').select(ITEM_SEL).eq('campus',campus).eq('status','available').order('created_at',{ascending:false}).limit(60);
   if(area)qb=qb.eq('area',area);
   if(mode&&mode!=='Semua')qb=qb.eq('mode',mode);
   if(cat&&cat!=='Semua')qb=qb.eq('category',cat);
@@ -101,7 +107,7 @@ function go(id,opts={}){
   cur=id;window.scrollTo(0,0);if(id!=='chat')curConv=null;
   $('#nav').hidden=!['home','search','chats','profile'].includes(id);
   document.querySelectorAll('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
-  ({email:loadShowcase,onb:renderOnb,otp:startOtp,campus:renderCampus,home:renderHome,search:renderSearch,chats:renderChats,chat:()=>renderChat(opts.id),
+  ({admin:renderAdmin,email:loadShowcase,onb:renderOnb,otp:startOtp,campus:renderCampus,home:renderHome,search:renderSearch,chats:renderChats,chat:()=>renderChat(opts.id),
     post:resetPost,profile:renderProfile,detail:()=>renderDetail(opts.id)}[id]||(()=>{}))();
 }
 document.addEventListener('click',e=>{
@@ -117,14 +123,14 @@ $('#scrim').addEventListener('click',e=>{if(e.target.id==='scrim'||e.target.clos
 
 function scope(){
   const ck=(ok,b,s)=>`<div><span class="ck ${ok?'':'no'}">${svg(ok?'check':'lock')}</span><span><b>${b}</b><br><small>${s}</small></span></div>`;
-  modal(`<div class="mi" data-ic="flag"></div><h2>Sprint 2 · 14–21 Nov 2026 · 19 SP</h2>
-  <p>Sprint goal: seeker bisa menemukan barang di kampusnya dan menghubungi owner.</p>
+  modal(`<div class="mi" data-ic="flag"></div><h2>Sprint 3 · 15 SP</h2>
+  <p>Sprint 1–2 selesai: daftar, posting, cari, filter, dan chat. Sprint 3 menyelesaikan transaksi sampai barang berpindah tangan.</p>
   <div class="scope">
-  ${ck(1,'PBI-05 · Home: listing terbaru per kampus','8 SP · Fikriyyah')}
-  ${ck(1,'PBI-06 · Search kata kunci + chip kategori','5 SP · Casiella')}
-  ${ck(1,'PBI-07 · Campus filter: kampus, area kos, mode','3 SP · Wella')}
-  ${ck(1,'PBI-08 · Chat realtime + 3 template pesan','8 SP · Anassya')}
-  ${ck(0,'Revisi UI dari usability test (laporan M2)','Masuk setelah 21 Nov')}
+  ${ck(1,'PBI-09 · Kartu kesepakatan waktu & tempat COD di chat','3 SP')}
+  ${ck(1,'PBI-10 · Tandai Selesai, ringkasan dampak, profil aktivitas','5 SP')}
+  ${ck(1,'PBI-11 · Fake-door Sundul: tombol + log klik','2 SP')}
+  ${ck(1,'PBI-12 · Uji keamanan data (RLS) & bug fixing','5 SP')}
+  ${ck(1,'Panel admin: statistik, moderasi, pengguna','Pendukung PBI-10 & 11')}
   ${ck(0,'Favorit, bagikan, edit profil','Sprint berikutnya')}
   </div><button class="btn" data-close>Tutup</button>`);
 }
@@ -199,8 +205,9 @@ $('#otpF').onsubmit=async e=>{e.preventDefault();const B=$('#otpB');B.disabled=t
 
 async function afterLogin(user){
   S.uid=user.id;S.email=user.email;
-  const {data:prof,error}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+  const {data:prof,error}=await sb.from('profiles').select(PROF_COLS).eq('id',user.id).maybeSingle();
   if(error){toast(errMsg(error))}
+  S.admin=false;sb.rpc('is_admin').then(({data})=>{S.admin=!!data;if(cur==='profile')renderProfile()});
   if(prof?.campus){S.me=prof;S.filter.campus=prof.campus;startRealtime();go(S.q?'search':'home')}
   else go('campus');
 }
@@ -216,7 +223,8 @@ $('#campB').onclick=async()=>{const v=document.querySelector('input[name=camp]:c
   const local=S.email.split('@')[0].split(/[._\d-]/).filter(Boolean)[0]||'mahasiswa';
   const name=S.me?.name||local[0].toUpperCase()+local.slice(1);
   const B=$('#campB');B.disabled=true;
-  const {data,error}=await sb.from('profiles').upsert({id:S.uid,email:S.email,name,campus:v.value}).select().single();
+  const {data,error}=S.me?await sb.from('profiles').update({name,campus:v.value}).eq('id',S.uid).select(PROF_COLS).single()
+    :await sb.from('profiles').insert({id:S.uid,email:S.email,name,campus:v.value}).select(PROF_COLS).single();
   B.disabled=false;
   if(error){$('#campE').textContent=errMsg(error);return}
   S.me=data;S.filter={campus:data.campus,area:'',mode:'Semua'};startRealtime();
@@ -357,6 +365,7 @@ async function renderDetail(id){const el=$('#detail');
    <div class="tb"><button id="dBack" aria-label="Kembali">${svg('left')}</button><span style="display:flex;gap:8px"><button data-lock="Bagikan barang">${svg('share')}</button><button data-lock="Simpan ke favorit">${svg('heart')}</button></span></div>
    <span class="cnt" id="cnt">1/${i.img.length}</span></div>
   <div class="dbody">
+   ${i.status==='done'?`<div class="donebar">${svg('check')}<span><b>Barang sudah selesai</b><br>Sudah berpindah tangan${i.doneAt?' '+ago(i.doneAt)+' lalu':''}.</span></div>`:''}
    <div class="dtags"><span class="mtag m-${i.m}">${i.m}</span><span>${esc(i.k)}</span><span>${esc(i.c)}</span>${i.area?`<span>Area ${esc(i.area)}</span>`:''}${i.sample?'<span>Contoh</span>':''}</div>
    <h1>${esc(i.t)}</h1>
    <div class="dpr">${i.m==='Sell'?rp(i.p):i.m==='Swap'?'Tukar barang':'Gratis'}</div>
@@ -368,16 +377,114 @@ async function renderDetail(id){const el=$('#detail');
    ${i.d?`<div class="box"><h3>Deskripsi</h3><p>${esc(i.d)}</p></div>`:''}
   </div>
   <div class="dfoot">${i.sample?`<button class="btn" disabled>Barang contoh · tidak bisa chat</button>`
-    :i.mine?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang">${svg('trash')}</button><button class="btn" data-tab="chats">${svg('chat')}Lihat chat masuk</button>`
-    :`<button class="btn" id="dChat">${svg('chat')}Chat pemilik</button>`}</div>`;
+    :i.mine?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang">${svg('trash')}</button>`+(i.status==='done'
+        ?`<button class="btn ghost" id="dReopen">Tersedia lagi</button><button class="btn" data-tab="profile">${svg('chart')}Lihat dampak</button>`
+        :`<button class="btn ghost sundul" id="dSundul">${svg('up')}Sundul</button><button class="btn" id="dDone">${svg('check')}Tandai selesai</button>`)
+    :i.status==='done'?`<button class="btn" disabled>Barang sudah selesai</button>`
+    :`${S.admin?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang (admin)">${svg('trash')}</button>`:''}<button class="btn" id="dChat">${svg('chat')}Chat pemilik</button>`}</div>`;
   $('#dBack').onclick=()=>go(prev.s,prev.o);
   if($('#dChat'))$('#dChat').onclick=()=>openChatFor(i);
-  if($('#dDel'))$('#dDel').onclick=()=>{modal(`<h2>Hapus barang ini?</h2><p>“${esc(i.t)}” akan hilang dari beranda semua orang, termasuk chat terkait.</p><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="delOk" style="background:#B3261E">Hapus</button></div>`);
+  if($('#dDone'))$('#dDone').onclick=()=>markDone(i);
+  if($('#dReopen'))$('#dReopen').onclick=()=>reopenItem(i);
+  if($('#dSundul'))$('#dSundul').onclick=()=>sundul(i);
+  if($('#dDel'))$('#dDel').onclick=()=>{modal(`<h2>Hapus barang ini?</h2><p>“${esc(i.t)}” akan hilang dari beranda semua orang, termasuk chat terkait.${i.mine?'':' Kamu menghapus sebagai <b>admin</b>.'}</p><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="delOk" style="background:#B3261E">Hapus</button></div>`);
     $('#delOk').onclick=async()=>{$('#delOk').disabled=true;const {error}=await sb.from('items').delete().eq('id',i.id);
       if(error){toast(errMsg(error));$('#delOk').disabled=false;return}
-      const paths=i.img.map(pathFromUrl).filter(Boolean);if(paths.length)sb.storage.from(BUCKET).remove(paths);
+      const paths=i.mine?i.img.map(pathFromUrl).filter(Boolean):[];if(paths.length)sb.storage.from(BUCKET).remove(paths);
       delete S.cache[i.id];closeModal();toast('Barang dihapus');go('home')}};
   const trk=$('#trk');trk.onscroll=()=>{$('#cnt').textContent=(Math.round(trk.scrollLeft/trk.clientWidth)+1)+'/'+i.img.length};}
+
+/* ---------- PBI-10 · Tandai selesai + ringkasan dampak ---------- */
+async function markDone(i){
+  modal(`<h2>Tandai selesai</h2><p>Memuat siapa saja yang chat soal barang ini…</p>`);
+  const {data:cvs}=await sb.from('conversations').select('buyer_id, buyer:profiles!conversations_buyer_id_fkey(name)').eq('item_id',i.id);
+  const opts=(cvs||[]).map(c=>`<label><input type="radio" name="taker" value="${c.buyer_id}"><span><b style="font-weight:500">${esc(c.buyer?.name||'Mahasiswa')}</b><span>Pernah chat soal barang ini</span></span></label>`).join('');
+  modal(`<div class="mi" data-ic="check"></div><h2>“${esc(i.t)}” sudah ${i.m==='Sell'?'terjual':i.m==='Swap'?'ditukar':'diberikan'}?</h2>
+   <p>Barang akan hilang dari beranda dan pencarian. Pilih siapa yang mendapatkannya.</p>
+   <div class="cods" id="takers">${opts}<label><input type="radio" name="taker" value="" ${opts?'':'checked'}><span><b style="font-weight:500">Orang lain / tidak dicatat</b><span>Di luar chat ReUse</span></span></label></div>
+   <div class="err" id="doneE"></div>
+   <div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="doneOk">Selesai</button></div>`);
+  $('#doneOk').onclick=async()=>{const v=document.querySelector('input[name=taker]:checked');
+    if(!v){$('#doneE').textContent='Pilih salah satu dulu.';return}
+    $('#doneOk').disabled=true;
+    const {data,error}=await sb.from('items').update({status:'done',taken_by:v.value||null}).eq('id',i.id).select(ITEM_SEL).single();
+    if(error){$('#doneE').textContent=errMsg(error);$('#doneOk').disabled=false;return}
+    cacheIt(mapItem(data));showImpact(true);renderDetail(i.id);};
+}
+async function reopenItem(i){
+  const {data,error}=await sb.from('items').update({status:'available'}).eq('id',i.id).select(ITEM_SEL).single();
+  if(error){toast(errMsg(error));return}cacheIt(mapItem(data));toast('Barang tampil lagi di beranda');renderDetail(i.id);}
+async function myImpact(){
+  const [{data:mine},{count:got},{count:deals}]=await Promise.all([
+    sb.from('items').select(ITEM_SEL).eq('owner',S.uid).order('created_at',{ascending:false}),
+    sb.from('items').select('id',{count:'exact',head:true}).eq('taken_by',S.uid),
+    sb.from('deals').select('id',{count:'exact',head:true}).eq('status','accepted')]);
+  const items=(mine||[]).map(mapItem).map(cacheIt),done=items.filter(x=>x.status==='done');
+  return {items,posted:items.length,done:done.length,got:got||0,deals:deals||0,
+    earned:done.filter(x=>x.m==='Sell').reduce((a,x)=>a+(x.p||0),0),
+    donated:done.filter(x=>x.m==='Donate').length,swapped:done.filter(x=>x.m==='Swap').length};
+}
+const impactText=d=>[d.done?`<b>${d.done}</b> barang dapat pemilik baru, tidak berakhir di tempat sampah`:'',
+  d.earned?`<b>${rp(d.earned)}</b> uang tambahan dari barang yang terjual`:'',
+  d.donated?`<b>${d.donated}</b> barang didonasikan ke sesama mahasiswa`:'',
+  d.swapped?`<b>${d.swapped}</b> barang ditukar dengan yang lebih kamu butuhkan`:'',
+  d.got?`<b>${d.got}</b> barang bekas kamu pakai lagi`:''].filter(Boolean);
+async function showImpact(fresh){const d=await myImpact();const lines=impactText(d);
+  modal(`<div class="mi" data-ic="${fresh?'gift':'chart'}"></div><h2>${fresh?`Barang ke-${d.done} yang kamu selamatkan!`:'Dampakmu di ReUse'}</h2>
+   <div class="impact">${lines.length?lines.map(l=>`<div>${svg('check')}<span>${l}</span></div>`).join(''):'<p>Belum ada barang yang selesai.</p>'}</div>
+   <button class="btn" data-close>Mantap</button>`);}
+
+/* ---------- PBI-11 · Fake-door Sundul (log klik) ---------- */
+async function sundul(i){
+  const {error}=await sb.from('sundul_clicks').insert({item_id:i.id,user_id:S.uid});
+  modal(`<div class="mi" data-ic="up"></div><h2>Sundul segera hadir</h2>
+   <p>Sundul akan menaikkan barangmu ke urutan teratas beranda kampus selama 24 jam, kira-kira <b>Rp2.000</b> sekali sundul.</p>
+   <p>${error?'Fitur ini belum tersedia.':'Terima kasih! Minatmu sudah kami catat untuk menentukan apakah fitur ini dibuat.'}</p>
+   <button class="btn" data-close>Oke</button>`);}
+
+/* ---------- PBI-09 · Kartu kesepakatan COD di chat ---------- */
+let curCv=null;
+const fmtMeet=ts=>new Date(ts).toLocaleString('id-ID',{weekday:'long',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const DEAL_TXT={proposed:'Menunggu jawaban',accepted:'Disepakati',declined:'Ditolak',cancelled:'Dibatalkan'};
+function dealHTML(d){const mine=d.proposer===S.uid,open=d.status==='proposed';
+  return `<div class="deal ${mine?'me':''} st-${d.status}" data-deal="${d.id}">
+   <div class="dh">${svg('cal')}<b>${mine?'Ajakan COD kamu':'Ajakan COD'}</b><span class="dst">${DEAL_TXT[d.status]}</span></div>
+   <div class="dr">${svg('cal')}<span>${esc(fmtMeet(d.meet_at))}</span></div>
+   <div class="dr">${svg('pin')}<span>${esc(d.place)}</span></div>
+   ${open&&!mine?`<div class="da"><button class="btn ghost" data-dact="declined">Tolak</button><button class="btn" data-dact="accepted">Terima</button></div>`:''}
+   ${open&&mine?`<div class="da"><button class="btn ghost" data-dact="cancelled">Batalkan</button></div>`:''}
+   <time>${hm(d.created_at)}</time></div>`;}
+function putDeal(d){const M=$('#msgs'),old=M.querySelector(`[data-deal="${d.id}"]`);
+  if(old){old.outerHTML=dealHTML(d);return}
+  M.querySelector('.chempty')?.remove();
+  const day=dayTxt(d.created_at);if(day!==lastDay){lastDay=day;M.insertAdjacentHTML('beforeend',`<div class="mday">${day}</div>`)}
+  M.insertAdjacentHTML('beforeend',dealHTML(d));M.scrollTop=M.scrollHeight;}
+$('#msgs').addEventListener('click',async e=>{const b=e.target.closest('[data-dact]');if(!b)return;
+  const id=b.closest('[data-deal]').dataset.deal;b.disabled=true;
+  const {data,error}=await sb.from('deals').update({status:b.dataset.dact}).eq('id',id).select().single();
+  if(error){toast(errMsg(error));b.disabled=false;return}putDeal(data);
+  if(data.status==='accepted')toast('COD disepakati. Jangan lupa tandai selesai setelah barang berpindah tangan.');});
+function proposeDeal(){if(!curCv)return;const it=curCv.items||{},c=campusOf(it.campus);
+  const t=new Date(Date.now()+864e5);const dd=t.toISOString().slice(0,10);
+  modal(`<div class="mi" data-ic="cal"></div><h2>Atur waktu & tempat COD</h2>
+   <label class="lbl" for="dlD">Tanggal</label><input class="field" type="date" id="dlD" value="${dd}" min="${new Date().toISOString().slice(0,10)}">
+   <label class="lbl" for="dlT">Jam</label><input class="field" type="time" id="dlT" value="13:00">
+   <label class="lbl" for="dlP">Tempat</label><select class="field" id="dlP">${c.cod.map((n,k)=>`<option ${k===it.cod?'selected':''}>${esc(n)}</option>`).join('')}<option value="">Tempat lain…</option></select>
+   <input class="field" id="dlO" placeholder="Tulis tempat lain" maxlength="80" hidden style="margin-top:8px">
+   <div class="err" id="dlE"></div>
+   <div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="dlOk">Kirim ajakan</button></div>`);
+  $('#dlP').onchange=()=>{$('#dlO').hidden=!!$('#dlP').value};
+  $('#dlOk').onclick=async()=>{const place=($('#dlP').value||$('#dlO').value).trim();
+    const when=new Date(`${$('#dlD').value}T${$('#dlT').value||'00:00'}`);
+    if(isNaN(when)){$('#dlE').textContent='Isi tanggal dan jam.';return}
+    if(when<Date.now()){$('#dlE').textContent='Waktu COD sudah lewat.';return}
+    if(place.length<2){$('#dlE').textContent='Isi tempat COD.';return}
+    $('#dlOk').disabled=true;
+    const {data,error}=await sb.from('deals').insert({conversation_id:curConv,proposer:S.uid,meet_at:when.toISOString(),place}).select().single();
+    if(error){$('#dlE').textContent=errMsg(error);$('#dlOk').disabled=false;return}
+    closeModal();putDeal(data);};
+}
+$('#chCod').onclick=proposeDeal;
 
 /* ---------- PBI-08 · Chat realtime + 3 template pesan ---------- */
 async function openChatFor(i){const B=$('#dChat');if(B)B.disabled=true;
@@ -417,16 +524,19 @@ function templates(cv){const it=cv.items||{},c=campusOf(it.campus),cod=c.cod[it.
     it.mode==='Sell'?'Harganya masih bisa nego?':it.mode==='Swap'?`Aku punya barang buat ditukar, boleh kirim fotonya?`:'Boleh aku ambil barangnya?'];}
 async function renderChat(id){curConv=id;seenMsg=new Set();lastDay='';
   $('#msgs').innerHTML='<div class="chempty">Memuat pesan…</div>';$('#chHead').innerHTML='';$('#tpls').innerHTML='';$('#chI').value='';
-  const [{data:cv,error},{data:msgs}]=await Promise.all([
+  const [{data:cv,error},{data:msgs},{data:deals}]=await Promise.all([
     sb.from('conversations').select(CONV_SEL).eq('id',id).single(),
-    sb.from('messages').select('*').eq('conversation_id',id).order('created_at',{ascending:true}).limit(500)]);
+    sb.from('messages').select('*').eq('conversation_id',id).order('created_at',{ascending:true}).limit(500),
+    sb.from('deals').select('*').eq('conversation_id',id).order('created_at',{ascending:true})]);
   if(curConv!==id)return;
   if(error||!cv){toast('Chat tidak ditemukan');go('chats');return}
-  const it=cv.items||{};
+  curCv=cv;const it=cv.items||{};
   $('#chHead').innerHTML=`<img src="${esc(it.photos?.[0]||'')}" alt=""><div><b>${esc(otherName(cv)||'Mahasiswa')} <span class="vb">${VB}</span></b><small>${esc(it.title||'Barang dihapus')} · ${it.mode==='Sell'?rp(it.price):it.mode==='Swap'?'Tukar':'Gratis'}</small></div>`;
   $('#chHead').onclick=()=>it.id&&openDetail(it.id);
-  $('#msgs').innerHTML=(msgs||[]).length?'':`<div class="chempty">Mulai obrolan dengan ${esc(otherName(cv)||'pemilik')}.<br>Pakai template di bawah biar cepat.</div>`;
-  (msgs||[]).forEach(m=>appendMsg(m));
+  const feed=[...(msgs||[]).map(m=>({...m,_t:'m'})),...(deals||[]).map(d=>({...d,_t:'d'}))].sort((a,b)=>a.created_at<b.created_at?-1:1);
+  $('#msgs').innerHTML=feed.length?'':`<div class="chempty">Mulai obrolan dengan ${esc(otherName(cv)||'pemilik')}.<br>Pakai template di bawah, atau ketuk ikon kalender untuk mengatur COD.</div>`;
+  feed.forEach(x=>x._t==='m'?appendMsg(x):putDeal(x));
+  $('#chCod').hidden=!it.id||it.status==='done';
   $('#tpls').innerHTML=templates(cv).map(t=>`<button type="button">${esc(t)}</button>`).join('');
 }
 $('#tpls').onclick=e=>{const b=e.target.closest('button');if(b){sendMsg(b.textContent);$('#tpls').scrollTo({left:0,behavior:'smooth'})}};
@@ -450,14 +560,65 @@ function startRealtime(){if(channel)return;
      if(cur==='chat'&&m.conversation_id===curConv){appendMsg(m);return}
      if(m.sender===S.uid)return;
      if(cur==='chats')renderChats();else{$('#nDot').hidden=false;toast('Pesan baru: '+m.body.slice(0,40))}})
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'deals'},({new:d})=>onDeal(d,true))
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'deals'},({new:d})=>onDeal(d,false))
    .subscribe();}
+function onDeal(d,isNew){
+  if(cur==='chat'&&d.conversation_id===curConv){putDeal(d);return}
+  const fromOther=isNew?d.proposer!==S.uid:d.proposer===S.uid;
+  if(!fromOther)return;
+  if(cur==='chats')renderChats();else{$('#nDot').hidden=false;toast(isNew?'Ajakan COD baru di chat':'Ajakan COD-mu '+DEAL_TXT[d.status].toLowerCase())}}
 
 /* ---------- Profil ---------- */
 async function renderProfile(){const c=myCampus();$('#pfAv').textContent=S.me.name[0];$('#pfN').innerHTML=esc(S.me.name)+` <span class="vb">${VB}</span>`;
-  $('#pfE').textContent=S.me.email;$('#pfV').innerHTML=VB+`<span><b>Terverifikasi via ${PWMODE?'email kampus':'OTP'}</b><br>Lencana ini tampil di setiap barang yang kamu posting.</span>`;
-  $('#pfC').textContent=c.s;$('#pfP').textContent='…';
-  const {count}=await sb.from('items').select('id',{count:'exact',head:true}).eq('owner',S.uid);$('#pfP').textContent=count??0;}
-$('#logout').onclick=async()=>{if(channel){sb.removeChannel(channel);channel=null}await sb.auth.signOut();
+  $('#pfE').textContent=S.email;$('#pfV').innerHTML=VB+`<span><b>Terverifikasi via ${PWMODE?'email kampus':'OTP'}</b><br>Lencana ini tampil di setiap barang yang kamu posting.</span>`;
+  $('#pfC').textContent=c.s;$('#adminBtn').hidden=!S.admin;
+  $('#pfStats').innerHTML=skel(3);$('#pfItems').innerHTML='';
+  const d=await myImpact();if(cur!=='profile')return;
+  $('#pfStats').innerHTML=[['Diposting',d.posted],['Selesai',d.done],['Didapat',d.got],['COD disepakati',d.deals]].map(([l,n])=>`<div><b>${n}</b><small>${l}</small></div>`).join('');
+  const lines=impactText(d);
+  $('#pfImpact').innerHTML=lines.length?lines.map(l=>`<div>${svg('check')}<span>${l}</span></div>`).join(''):'<p>Belum ada barang yang selesai. Tandai barangmu “selesai” setelah berpindah tangan untuk melihat dampaknya di sini.</p>';
+  $('#pfItems').innerHTML=d.items.length?d.items.map(x=>`<button class="myi" data-id="${x.id}"><img src="${esc(x.img[0])}" alt=""><span><b>${esc(x.t)}</b><small>${x.m} · ${ago(x.ts)} lalu</small></span><em class="${x.status==='done'?'done':''}">${x.status==='done'?'Selesai':'Tersedia'}</em></button>`).join('')
+    :'<p class="muted">Belum ada barang. Posting lewat tombol +.</p>';}
+$('#pfItems').onclick=e=>{const b=e.target.closest('[data-id]');if(b)openDetail(b.dataset.id)};
+$('#adminBtn').onclick=()=>go('admin');
+
+/* ---------- Panel admin ---------- */
+let admTab='ringkas';
+async function renderAdmin(){if(!S.admin){go('profile');return}
+  document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('on',b.dataset.at===admTab));
+  const B=$('#admBody');B.innerHTML=skel(4);
+  try{({ringkas:admSummary,barang:admItems,pengguna:admUsers,sundul:admSundul}[admTab])(B)}catch(e){B.innerHTML=`<div class="empty">${esc(errMsg(e))}</div>`}}
+$('#admTabs').onclick=e=>{const b=e.target.closest('[data-at]');if(b){admTab=b.dataset.at;renderAdmin()}};
+$('#admBack').onclick=()=>go('profile');
+const tile=(n,l,s2)=>`<div class="tile"><b>${n}</b><small>${l}</small>${s2?`<em>${s2}</em>`:''}</div>`;
+async function admSummary(B){const {data:st,error}=await sb.rpc('admin_stats');if(error)throw error;
+  const bm=st.by_mode||{},tot=(bm.Sell||0)+(bm.Swap||0)+(bm.Donate||0)||1;
+  B.innerHTML=`<div class="tiles">${tile(st.users,'Pengguna',`+${st.users_7d} dalam 7 hari`)}${tile(st.items_active,'Barang aktif')}${tile(st.items_done,'Barang selesai',st.value_done?rp(st.value_done)+' terjual':'')}
+    ${tile(st.conversations,'Percakapan',`${st.messages} pesan`)}${tile(st.deals_accepted,'COD disepakati',`dari ${st.deals_total} ajakan`)}${tile(st.sundul_clicks,'Klik Sundul',`${st.sundul_users} pengguna`)}</div>
+   <h3 class="ah">Barang per mode</h3><div class="bars">${['Sell','Swap','Donate'].map(m=>`<div><span>${m}</span><i style="--w:${Math.round((bm[m]||0)/tot*100)}%" class="m-${m}"></i><b>${bm[m]||0}</b></div>`).join('')}</div>
+   <h3 class="ah">Per kampus</h3><div class="atable"><div class="ar head"><span>Kampus</span><span>Pengguna</span><span>Barang</span></div>${(st.by_campus||[]).map(r=>`<div class="ar"><span>${esc(campusOf(r.campus).s)}</span><span>${r.users}</span><span>${r.items}</span></div>`).join('')}</div>
+   <p class="muted">Isi chat tidak bisa dibaca admin. Yang terlihat hanya jumlahnya.</p>`;}
+async function admItems(B){const {data,error}=await sb.from('items').select(ITEM_SEL).order('created_at',{ascending:false}).limit(100);if(error)throw error;
+  const items=data.map(mapItem).map(cacheIt);
+  B.innerHTML=`<p class="muted">${items.length} barang terbaru dari semua kampus. Hapus barang yang melanggar aturan.</p>`+items.map(x=>`<div class="myi"><img src="${esc(x.img[0])}" alt="" data-id="${x.id}"><span data-id="${x.id}"><b>${esc(x.t)}</b><small>${esc(x.by)} · ${esc(campusOf(x.campus).s)} · ${x.m} · ${ago(x.ts)} lalu</small></span><em class="${x.status==='done'?'done':''}">${x.status==='done'?'Selesai':'Aktif'}</em><button class="adel" data-del="${x.id}" aria-label="Hapus">${svg('trash')}</button></div>`).join('');
+  B.onclick=async e=>{const o=e.target.closest('[data-id]');if(o&&!e.target.closest('[data-del]')){openDetail(o.dataset.id);return}
+    const d=e.target.closest('[data-del]');if(!d)return;const x=S.cache[d.dataset.del];
+    modal(`<h2>Hapus sebagai admin?</h2><p>“${esc(x.t)}” milik ${esc(x.by)} akan dihapus dari semua akun, termasuk chat terkait. Tindakan ini tidak bisa dibatalkan.</p><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="adOk" style="background:#B3261E">Hapus</button></div>`);
+    $('#adOk').onclick=async()=>{$('#adOk').disabled=true;const {error}=await sb.from('items').delete().eq('id',x.id);
+      if(error){toast(errMsg(error));$('#adOk').disabled=false;return}delete S.cache[x.id];closeModal();toast('Barang dihapus');renderAdmin()}};}
+async function admUsers(B){const {data,error}=await sb.rpc('admin_users');if(error)throw error;
+  B.innerHTML=`<p class="muted">${data.length} pengguna terdaftar.</p><div class="atable u"><div class="ar head"><span>Nama</span><span>Kampus</span><span>Barang</span></div>${data.map(u=>`<div class="ar"><span><b>${esc(u.name)}${u.is_admin?' <em class="adm">admin</em>':''}</b><small>${esc(u.email)} · gabung ${ago(Date.parse(u.created_at))} lalu</small></span><span>${esc(campusOf(u.campus).s)}</span><span>${u.items}${u.done?` <small>(${u.done} selesai)</small>`:''}</span></div>`).join('')}</div>`;}
+async function admSundul(B){const {data,error}=await sb.from('sundul_clicks').select('item_id,user_id,created_at').order('created_at',{ascending:false}).limit(1000);if(error)throw error;
+  const users=new Set(data.map(r=>r.user_id)),byItem={};data.forEach(r=>{byItem[r.item_id]=(byItem[r.item_id]||0)+1});
+  const ids=Object.keys(byItem).filter(x=>x!=='null');let titles={};
+  if(ids.length){const {data:its}=await sb.from('items').select('id,title').in('id',ids);(its||[]).forEach(t=>titles[t.id]=t.title)}
+  const {data:st}=await sb.rpc('admin_stats');const rate=st&&st.users?Math.round(users.size/st.users*100):0;
+  B.innerHTML=`<div class="tiles">${tile(data.length,'Total klik')}${tile(users.size,'Pengguna yang klik')}${tile(rate+'%','dari semua pengguna')}</div>
+   <p class="muted">Fake-door: tombol Sundul belum benar-benar menaikkan barang. Klik dicatat untuk mengukur minat sebelum fitur berbayar dibuat.</p>
+   <h3 class="ah">Barang yang paling sering disundul</h3><div class="atable"><div class="ar head"><span>Barang</span><span></span><span>Klik</span></div>${Object.entries(byItem).sort((a,b)=>b[1]-a[1]).map(([id,n])=>`<div class="ar"><span>${esc(titles[id]||'Barang dihapus')}</span><span></span><span>${n}</span></div>`).join('')||'<div class="ar"><span>Belum ada klik</span></div>'}</div>
+   <h3 class="ah">Klik terbaru</h3><div class="atable">${data.slice(0,15).map(r=>`<div class="ar"><span>${esc(titles[r.item_id]||'Barang dihapus')}</span><span></span><span>${ago(Date.parse(r.created_at))}</span></div>`).join('')}</div>`;}
+$('#logout').onclick=async()=>{if(channel){sb.removeChannel(channel);channel=null}await sb.auth.signOut();S.admin=false;
   S=fresh();$('#emailI').value='';$('#pwI').value='';$('#cList').innerHTML='';$('#nDot').hidden=true;go('onb')};
 
 /* ---------- Boot ---------- */

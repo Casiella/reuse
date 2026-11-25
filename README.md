@@ -11,6 +11,7 @@ Repo ini dipakai terus untuk semua sprint. Sprint 1 (versi lama, belum pakai dat
 |---|---|---|---|
 | 1 | 6–13 Nov 2026 | Mahasiswa terverifikasi bisa memposting barang dan melihat detailnya | [docs/sprint-1.md](docs/sprint-1.md) |
 | 2 | 14–21 Nov 2026 | Seeker bisa menemukan barang di kampusnya dan menghubungi owner | [docs/sprint-2.md](docs/sprint-2.md) |
+| 3 | [tanggal] | Transaksi selesai sampai barang berpindah tangan + panel admin | [docs/sprint-3.md](docs/sprint-3.md) |
 
 ## Cakupan Sprint 2 (sprint berjalan)
 

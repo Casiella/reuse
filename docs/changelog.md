@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-25 · Sprint 3 + panel admin
+- PBI-09: kartu kesepakatan waktu & tempat COD di chat (tabel `deals`, realtime).
+- PBI-10: tandai selesai + pilih penerima, ringkasan dampak, profil aktivitas, barang selesai disembunyikan dari beranda/cari/login.
+- PBI-11: fake-door Sundul dengan log klik (`sundul_clicks`).
+- PBI-12: 39 skenario RLS lulus (`supabase/tests/rls_test.sql`); perbaikan kebocoran email pengguna (migrasi 005).
+- Panel admin: ringkasan, moderasi barang, daftar pengguna, hasil Sundul (tabel `admins`).
+
 ## 2026-11-18 · Tampilan
 - Layar login: latar ilustrasi kamar kos + kartu kaca (glassmorphism), slideshow barang yang benar-benar sedang dijual (fungsi `showcase`, migrasi 002), logo putih.
 - Logo dibuat ulang sebagai vektor (`img/logo.svg`) supaya tajam di semua layar. Layar login: slideshow 5 barang contoh yang berganti otomatis.

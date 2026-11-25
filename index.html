@@ -210,7 +210,7 @@
 <section class="screen" id="home">
   <div class="hhead">
     <div class="hrow"><div><small><span data-ic="pin"></span><span id="hCamp"></span></small><h1 id="hHi"></h1></div>
-      <button class="sbadge" id="scopeBtn"><span data-ic="flag"></span>Sprint 2</button></div>
+      <button class="sbadge" id="scopeBtn"><span data-ic="flag"></span>Sprint 3</button></div>
     <div class="srow"><button class="search" data-tab="search"><span data-ic="search"></span>Cari barang di sekitar kampus</button>
       <button class="fbtn" id="filterBtn" aria-label="Filter"><span data-ic="sliders"></span><i id="fDot" hidden></i></button></div>
   </div>
@@ -293,8 +293,15 @@
   <div class="msgs" id="msgs"></div>
   <div class="composer">
     <div class="tpls" id="tpls"></div>
-    <form class="crow" id="chF"><input class="field" id="chI" maxlength="1000" placeholder="Tulis pesan…" autocomplete="off"><button class="btn sendb" id="chB" aria-label="Kirim"><span data-ic="send"></span></button></form>
+    <form class="crow" id="chF"><button type="button" class="ibtn cod" id="chCod" aria-label="Atur waktu & tempat COD"><span data-ic="cal"></span></button><input class="field" id="chI" maxlength="1000" placeholder="Tulis pesan…" autocomplete="off"><button class="btn sendb" id="chB" aria-label="Kirim"><span data-ic="send"></span></button></form>
   </div>
+</section>
+
+<!-- ADMIN -->
+<section class="screen" id="admin">
+  <div class="top"><button class="ibtn" id="admBack" aria-label="Kembali"><span data-ic="left"></span></button><h1>Panel admin</h1></div>
+  <div class="chips" id="admTabs"><button class="chip" data-at="ringkas">Ringkasan</button><button class="chip" data-at="barang">Barang</button><button class="chip" data-at="pengguna">Pengguna</button><button class="chip" data-at="sundul">Sundul</button></div>
+  <div class="admbody" id="admBody"></div>
 </section>
 
 <!-- PROFILE -->
@@ -302,11 +309,14 @@
   <div class="top"><h1>Profil</h1></div>
   <div class="prof"><div class="av" id="pfAv"></div><h2 id="pfN"></h2><p id="pfE"></p>
     <div class="verif" style="text-align:left;margin-top:14px" id="pfV"></div></div>
+  <div class="pfsec"><h3>Aktivitas</h3><div class="pfstats" id="pfStats"></div></div>
+  <div class="pfsec"><h3>Dampakmu</h3><div class="impact" id="pfImpact"></div></div>
+  <div class="pfsec"><h3>Barangku</h3><div id="pfItems"></div></div>
   <div class="list">
+    <button id="adminBtn" hidden><span data-ic="shield"></span>Panel admin<span class="r"><span data-ic="right"></span></span></button>
     <div><span data-ic="pin"></span>Kampus<span class="r" id="pfC"></span></div>
-    <div><span data-ic="box"></span>Barang diposting<span class="r" id="pfP"></span></div>
     <button data-lock="Edit profil & riwayat transaksi"><span data-ic="user"></span>Edit profil<span class="r"><span data-ic="lock"></span></span></button>
-    <button id="scopeBtn2"><span data-ic="flag"></span>Cakupan Sprint 2<span class="r"><span data-ic="right"></span></span></button>
+    <button id="scopeBtn2"><span data-ic="flag"></span>Cakupan Sprint 3<span class="r"><span data-ic="right"></span></span></button>
     <button id="logout" style="color:#B3261E"><span data-ic="out"></span>Keluar</button>
   </div>
   <div style="height:110px"></div>
