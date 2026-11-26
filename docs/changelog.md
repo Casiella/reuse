@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-26 · Komplain & tanda dibaca di chat
+- Komplain (migrasi 012): ikon bendera di halaman barang dan di chat. Pilih alasan (Penipuan, Barang tidak sesuai, Tidak datang saat COD, Kata-kata kasar, Konten tidak pantas, Lainnya) + cerita singkat.
+- Komplain hanya terlihat oleh pelapor dan admin; terlapor tidak tahu siapa pelapornya. Satu komplain aktif per orang & barang.
+- Admin: tab Komplain (Perlu ditangani / Riwayat) dengan tombol Proses, Selesai, Tolak + catatan untuk pelapor. Badge "N komplain" di tombol Panel admin.
+- Pelapor melihat status & jawaban admin di Profil → Komplain saya, plus notifikasi saat statusnya berubah.
+- Chat: ✓ terkirim, ✓✓ hijau sudah dibaca. Daftar chat menebalkan chat yang belum dibaca dan menampilkan jumlah pesan baru; tab Chat menampilkan angka total.
+
+## 2026-11-26 · Sundul berbayar
+- Sundul bukan lagi fake-door (migrasi 011): Rp2.000 lewat QRIS yang sama, diverifikasi admin, lalu barang tampil paling atas di beranda kampus 24 jam dengan lencana "Disundul".
+- Admin bisa mengubah biaya sundul (0 = gratis & langsung aktif). Tab Sundul menampilkan barang yang sedang disundul dan pemasukannya.
+- Uji RLS: 124 skenario.
+
 ## 2026-11-26 · Rating penjual
 - Tabel `reviews` + view `seller_ratings` (migrasi 010). Hanya pembeli yang dipilih saat "Tandai selesai" yang bisa memberi 1–5 bintang + ulasan, sekali per barang (bisa diubah).
 - Rating tampil di halaman barang (ketuk untuk lihat semua ulasan) dan di Profil penjual.

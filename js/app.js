@@ -29,6 +29,9 @@ send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
 eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
 cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
 up:'<path d="M12 19V5M5 12l7-7 7 7"/>',
+flag:'<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
+dbl:'<path d="M2 13l4 4L15 8"/><path d="M10 15.5l1.5 1.5L21 8"/>',
+clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
 users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6M16 4.5a3.5 3.5 0 0 1 0 7M22 20c0-3-2-5.2-5-5.8"/>',
 qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4"/>',
@@ -88,29 +91,36 @@ const campusOf=id=>CAMPUS.find(c=>c.id===id)||{id,n:id||'Kampus',s:id||'Kampus',
 const activeCampuses=()=>CAMPUS.filter(c=>c.active!==false||c.id===S.me?.campus);
 const codName=i=>i.codPlace||campusOf(i.campus).cod[i.cod]||'Titik COD';
 const PAY_BUCKET='payment-proofs';
-let FEE=0,FEE_SET=0,QRIS=null,QRIS_NAME='ReUse',QRIS_PAYLOAD=null,QRIS_DEMO=false;
+let FEE=0,FEE_SET=0,SFEE=0,SFEE_SET=0,QRIS=null,QRIS_NAME='ReUse',QRIS_PAYLOAD=null,QRIS_DEMO=false;
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=rej;document.head.appendChild(el)});
 async function loadSettings(){try{const {data}=await sb.from('settings').select('key,value');
-  (data||[]).forEach(r=>{if(r.key==='post_fee')FEE_SET=+r.value||0;if(r.key==='qris_url')QRIS=r.value||null;if(r.key==='qris_name')QRIS_NAME=r.value||'ReUse';if(r.key==='qris_payload')QRIS_PAYLOAD=r.value||null;if(r.key==='qris_demo')QRIS_DEMO=r.value===true});
-  FEE=QRIS||QRIS_PAYLOAD?FEE_SET:0}catch(_){}}
+  (data||[]).forEach(r=>{if(r.key==='post_fee')FEE_SET=+r.value||0;if(r.key==='sundul_fee')SFEE_SET=+r.value||0;if(r.key==='qris_url')QRIS=r.value||null;if(r.key==='qris_name')QRIS_NAME=r.value||'ReUse';if(r.key==='qris_payload')QRIS_PAYLOAD=r.value||null;if(r.key==='qris_demo')QRIS_DEMO=r.value===true});
+  FEE=QRIS||QRIS_PAYLOAD?FEE_SET:0;SFEE=QRIS||QRIS_PAYLOAD?SFEE_SET:0}catch(_){}}
 async function loadCampuses(){try{const {data,error}=await sb.from('campuses').select('*').order('sort').order('name');
   if(!error&&data&&data.length)CAMPUS=data.map(c=>({id:c.id,n:c.name,s:c.short,loc:c.loc,dom:c.domain,cod:c.cod,area:c.areas||[],active:c.active,sort:c.sort}))}catch(_){}}
 const myCampus=()=>campusOf(S.me?.campus);
 const mapItem=r=>({id:r.id,owner:r.owner,t:r.title,k:r.category,c:r.condition,m:r.mode,p:r.price,w:r.wish,cod:r.cod,codPlace:r.cod_place,area:r.area,d:r.description,
   img:r.photos||[],by:r.profiles?.name||'Mahasiswa',campus:r.campus,ts:Date.parse(r.created_at),mine:r.owner===S.uid,
-  status:r.status||'available',pay:r.pay_status||'approved',takenBy:r.taken_by,doneAt:r.done_at?Date.parse(r.done_at):null});
+  status:r.status||'available',pay:r.pay_status||'approved',takenBy:r.taken_by,doneAt:r.done_at?Date.parse(r.done_at):null,bumpUntil:r.bumped_until?Date.parse(r.bumped_until):0,bumpAt:r.bumped_at?Date.parse(r.bumped_at):0});
+const boosted=i=>i.bumpUntil>Date.now();
+const leftTxt=ms=>{const h=Math.floor(ms/3600e3),m=Math.max(1,Math.round(ms%3600e3/60e3));return h?`${h} jam${m&&h<6?' '+m+' mnt':''}`:`${m} mnt`};
 const cacheIt=i=>(S.cache[i.id]=i);
 const seedFor=cid=>SEED.map((x,i)=>cacheIt({...x,id:'sample-'+cid+'-'+i,campus:cid,ts:Date.now()-(i+1)*3600e3*(i+2),sample:true}));
 
 async function fetchItems({campus,area,mode,cat,q}){
-  let qb=sb.from('items').select(ITEM_SEL).eq('campus',campus).eq('status','available').order('created_at',{ascending:false}).limit(60);
-  if(area)qb=qb.eq('area',area);
-  if(mode&&mode!=='Semua')qb=qb.eq('mode',mode);
-  if(cat&&cat!=='Semua')qb=qb.eq('category',cat);
-  const k=(q||'').replace(/[%,()*"\\]/g,' ').trim();
-  if(k)qb=qb.or(`title.ilike."%${k}%",description.ilike."%${k}%"`);
-  const {data,error}=await qb;if(error)throw error;
-  return data.map(mapItem).map(cacheIt);
+  const base=()=>{let qb=sb.from('items').select(ITEM_SEL).eq('campus',campus).eq('status','available');
+    if(area)qb=qb.eq('area',area);
+    if(mode&&mode!=='Semua')qb=qb.eq('mode',mode);
+    if(cat&&cat!=='Semua')qb=qb.eq('category',cat);
+    const k=(q||'').replace(/[%,()*"\\]/g,' ').trim();
+    if(k)qb=qb.or(`title.ilike."%${k}%",description.ilike."%${k}%"`);
+    return qb};
+  // Barang yang sedang disundul (24 jam) selalu di atas, sisanya terbaru dulu
+  const [top,all]=await Promise.all([base().gt('bumped_until',new Date().toISOString()).order('bumped_at',{ascending:false}).limit(20),
+    base().order('created_at',{ascending:false}).limit(60)]);
+  if(all.error)throw all.error;
+  const up=(top.data||[]).map(mapItem).filter(boosted),ids=new Set(up.map(i=>i.id));
+  return [...up,...all.data.map(mapItem).filter(i=>!ids.has(i.id))].map(cacheIt);
 }
 
 /* ---------- Navigasi ---------- */
@@ -121,7 +131,7 @@ function go(id,opts={}){
   cur=id;window.scrollTo(0,0);if(id!=='chat')curConv=null;
   $('#nav').hidden=!['home','search','chats','profile'].includes(id);
   document.querySelectorAll('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
-  ({pay:()=>renderPay(opts.id),admin:renderAdmin,email:loadShowcase,onb:renderOnb,otp:startOtp,campus:renderCampus,home:renderHome,search:renderSearch,chats:renderChats,chat:()=>renderChat(opts.id),
+  ({pay:()=>renderPay(opts.id,opts.kind),admin:renderAdmin,email:loadShowcase,onb:renderOnb,otp:startOtp,campus:renderCampus,home:renderHome,search:renderSearch,chats:renderChats,chat:()=>renderChat(opts.id),
     post:resetPost,profile:renderProfile,detail:()=>renderDetail(opts.id)}[id]||(()=>{}))();
 }
 document.addEventListener('click',e=>{
@@ -236,7 +246,7 @@ const priceTxt=i=>i.m==='Sell'?rp(i.p):i.m==='Swap'?'Tukar':'Gratis';
 function ago(ts){const m=Math.max(1,Math.round((Date.now()-ts)/6e4));return m<60?m+' mnt':m<1440?Math.round(m/60)+' jam':Math.round(m/1440)+' hari'}
 const skel=n=>Array.from({length:n},()=>'<div class="skel"></div>').join('');
 function cardHTML(i){const c=campusOf(i.campus);
-  return `<button class="card" data-id="${i.id}"><div class="thumb"><img src="${esc(i.img[0])}" alt="" loading="lazy"><span class="mtag m-${i.m}">${i.m}</span>${i.sample?'<span class="smp">Contoh</span>':''}</div>
+  return `<button class="card" data-id="${i.id}"><div class="thumb"><img src="${esc(i.img[0])}" alt="" loading="lazy"><span class="mtag m-${i.m}">${i.m}</span>${i.sample?'<span class="smp">Contoh</span>':''}${boosted(i)?`<span class="bump">${svg('up')}Disundul</span>`:''}</div>
    <div class="ci"><b>${esc(i.t)}</b><div class="pr">${priceTxt(i)}</div><div class="meta">${svg('pin')}${esc(i.area?i.area+' · '+codName(i):codName(i))}</div>
    <div class="meta"><span class="vb">${VB}</span>${esc(i.by)}${i.mine?' (kamu)':''} · ${ago(i.ts)}</div></div></button>`;}
 let homeTok=0;
@@ -363,7 +373,7 @@ async function renderDetail(id){const el=$('#detail');
     if(!data){toast('Barang tidak ditemukan');go('home');return}i=cacheIt(mapItem(data));}
   const c=campusOf(i.campus);
   el.innerHTML=`<div class="gal"><div class="track" id="trk">${i.img.map(s=>`<img src="${esc(s)}" alt="">`).join('')}</div>
-   <div class="tb"><button id="dBack" aria-label="Kembali">${svg('left')}</button><button id="dShare" aria-label="Bagikan barang">${svg('share')}</button></div>
+   <div class="tb"><button id="dBack" aria-label="Kembali">${svg('left')}</button><span class="tbr">${!i.mine&&!i.sample?`<button id="dFlag" aria-label="Laporkan barang">${svg('flag')}</button>`:''}<button id="dShare" aria-label="Bagikan barang">${svg('share')}</button></span></div>
    <span class="cnt" id="cnt">1/${i.img.length}</span></div>
   <div class="dbody">
    ${i.mine&&i.pay!=='approved'?`<div class="paybar ${i.pay}" id="dPayBar">${svg('qr')}<span><b>${i.pay==='rejected'?'Pembayaran ditolak':'Belum tampil ke pembeli'}</b><br>${i.pay==='rejected'?'Kirim ulang bukti bayar.':'Menunggu pembayaran biaya posting '+rp(FEE)+'.'}</span></div>`:''}
@@ -382,7 +392,7 @@ async function renderDetail(id){const el=$('#detail');
     :i.mine&&i.pay!=='approved'?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang">${svg('trash')}</button><button class="btn" id="dPay">${svg('qr')}${i.pay==='rejected'?'Kirim ulang bukti':'Bayar / lihat status'}</button>`
     :i.mine?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang">${svg('trash')}</button>`+(i.status==='done'
         ?`<button class="btn ghost" id="dReopen">Tersedia lagi</button><button class="btn" data-tab="profile">${svg('chart')}Lihat dampak</button>`
-        :`<button class="btn ghost sundul" id="dSundul">${svg('up')}Sundul</button><button class="btn" id="dDone">${svg('check')}Tandai selesai</button>`)
+        :`<button class="btn ghost sundul ${boosted(i)?'on':''}" id="dSundul">${svg('up')}${boosted(i)?'Disundul · '+leftTxt(i.bumpUntil-Date.now()):'Sundul'}</button><button class="btn" id="dDone">${svg('check')}Tandai selesai</button>`)
     :i.status==='done'&&i.takenBy===S.uid?`<button class="btn" id="dReview">${svg('star')}Beri rating penjual</button>`
     :i.status==='done'?`<button class="btn" disabled>Barang sudah selesai</button>`
     :`${S.admin?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang (admin)">${svg('trash')}</button>`:''}<button class="btn" id="dChat">${svg('chat')}Chat pemilik</button>`}</div>`;
@@ -392,6 +402,7 @@ async function renderDetail(id){const el=$('#detail');
   if($('#dPay'))$('#dPay').onclick=()=>go('pay',{id:i.id});
   if($('#dReopen'))$('#dReopen').onclick=()=>reopenItem(i);
   if($('#dSundul'))$('#dSundul').onclick=()=>sundul(i);
+  if($('#dFlag'))$('#dFlag').onclick=()=>reportModal({target:i.owner,name:i.by,item:i.id,title:i.t});
   if($('#dDel'))$('#dDel').onclick=()=>{modal(`<h2>Hapus barang ini?</h2><p>“${esc(i.t)}” akan hilang dari beranda semua orang, termasuk chat terkait.${i.mine?'':' Kamu menghapus sebagai <b>admin</b>.'}</p><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="delOk" style="background:#B3261E">Hapus</button></div>`);
     $('#delOk').onclick=async()=>{$('#delOk').disabled=true;const {error}=await sb.from('items').delete().eq('id',i.id);
       if(error){toast(errMsg(error));$('#delOk').disabled=false;return}
@@ -443,13 +454,24 @@ async function showImpact(fresh){const d=await myImpact();const lines=impactText
    <div class="impact">${lines.length?lines.map(l=>`<div>${svg('check')}<span>${l}</span></div>`).join(''):'<p>Belum ada barang yang selesai.</p>'}</div>
    <button class="btn" data-close>Mantap</button>`);}
 
-/* ---------- PBI-11 · Fake-door Sundul (log klik) ---------- */
+/* ---------- Sundul · naik ke urutan teratas beranda kampus 24 jam ---------- */
 async function sundul(i){
-  const {error}=await sb.from('sundul_clicks').insert({item_id:i.id,user_id:S.uid});
-  modal(`<div class="mi" data-ic="up"></div><h2>Sundul segera hadir</h2>
-   <p>Sundul akan menaikkan barangmu ke urutan teratas beranda kampus selama 24 jam, kira-kira <b>Rp2.000</b> sekali sundul.</p>
-   <p>${error?'Fitur ini belum tersedia.':'Terima kasih! Minatmu sudah kami catat untuk menentukan apakah fitur ini dibuat.'}</p>
-   <button class="btn" data-close>Oke</button>`);}
+  sb.from('sundul_clicks').insert({item_id:i.id,user_id:S.uid}).then(()=>{});
+  if(boosted(i)){modal(`<div class="mi" data-ic="up"></div><h2>Barangmu sedang disundul</h2>
+     <p>“${esc(i.t)}” tampil paling atas di beranda ${esc(campusOf(i.campus).s)} dengan lencana <b>Disundul</b> sampai <b>${fmtMeet(i.bumpUntil)}</b> (sisa ${leftTxt(i.bumpUntil-Date.now())}).</p>
+     <p class="muted">Setelah masa itu habis kamu bisa menyundul lagi.</p><button class="btn" data-close>Oke</button>`);return}
+  await loadSettings();
+  const last=SFEE>0?await lastPayment(i.id,'sundul'):null;
+  if(last&&last.status==='pending'){go('pay',{id:i.id,kind:'sundul'});return}
+  modal(`<div class="mi" data-ic="up"></div><h2>Sundul barang ini?</h2>
+   <div class="impact"><div>${svg('up')}<span>Naik ke <b>urutan paling atas</b> beranda ${esc(campusOf(i.campus).s)}</span></div>
+    <div>${svg('clock')}<span>Berlaku <b>24 jam</b>, lalu kembali ke urutan biasa</span></div>
+    <div>${svg('star')}<span>Diberi lencana <b>Disundul</b> supaya lebih dilirik</span></div></div>
+   <div class="row2"><button class="btn ghost" data-close>Nanti</button><button class="btn" id="sdOk">${SFEE>0?'Bayar '+rp(SFEE):'Sundul sekarang'}</button></div>`);
+  $('#sdOk').onclick=async()=>{if(SFEE>0){closeModal();go('pay',{id:i.id,kind:'sundul'});return}
+    $('#sdOk').disabled=true;const {data,error}=await sb.rpc('sundul_free',{p_item:i.id});
+    if(error){toast(errMsg(error));$('#sdOk').disabled=false;return}
+    delete S.cache[i.id];closeModal();toast('Barangmu sudah disundul ke atas selama 24 jam');renderDetail(i.id)};}
 
 /* ---------- PBI-09 · Kartu kesepakatan COD di chat ---------- */
 let curCv=null;
@@ -496,40 +518,46 @@ function proposeDeal(){if(!curCv)return;const it=curCv.items||{},c=campusOf(it.c
 $('#chCod').onclick=proposeDeal;
 
 /* ---------- Biaya posting · QRIS manual ---------- */
-let payItem=null,payProof=null;
-async function lastPayment(itemId){const {data}=await sb.from('payments').select('*').eq('item_id',itemId).order('created_at',{ascending:false}).limit(1);return data?.[0]||null}
-async function renderPay(id){payItem=id;payProof=null;const B=$('#payBody');B.innerHTML=skel(2);
-  const [{data},last]=await Promise.all([sb.from('items').select(ITEM_SEL).eq('id',id).maybeSingle(),lastPayment(id)]);
-  if(payItem!==id)return;
+let payItem=null,payKind='post',payProof=null;
+async function lastPayment(itemId,kind='post'){const {data}=await sb.from('payments').select('*').eq('item_id',itemId).eq('kind',kind).order('created_at',{ascending:false}).limit(1);return data?.[0]||null}
+async function renderPay(id,kind){kind=kind||'post';payItem=id;payKind=kind;payProof=null;const B=$('#payBody');B.innerHTML=skel(2);
+  const SD=kind==='sundul';$('#pay h1').textContent=SD?'Sundul barang':'Biaya posting';
+  await loadSettings();
+  const [{data},last]=await Promise.all([sb.from('items').select(ITEM_SEL).eq('id',id).maybeSingle(),lastPayment(id,kind)]);
+  if(payItem!==id||payKind!==kind)return;
   if(!data){toast('Barang tidak ditemukan');go('profile');return}
-  const i=cacheIt(mapItem(data));
+  const i=cacheIt(mapItem(data)),AMT=SD?SFEE:FEE;
   const head=`<div class="payitem"><img src="${esc(i.img[0])}" alt=""><span><b>${esc(i.t)}</b><small>${i.m} · ${esc(campusOf(i.campus).s)}</small></span></div>`;
-  if(i.pay==='approved'){B.innerHTML=head+`<div class="paystate ok">${svg('check')}<b>Pembayaran disetujui</b><p>Barangmu sudah tampil di beranda kampus.</p></div><button class="btn" id="payGo">Lihat barang</button>`;
+  if(SD&&boosted(i)){B.innerHTML=head+`<div class="paystate ok">${svg('up')}<b>Barangmu sedang disundul</b><p>Tampil paling atas di beranda kampus sampai ${fmtMeet(i.bumpUntil)}.</p></div><button class="btn" id="payGo">Lihat barang</button>`;
     $('#payGo').onclick=()=>go('detail',{id});return}
-  if(last&&last.status==='pending'){B.innerHTML=head+`<div class="paystate">${svg('qr')}<b>Bukti terkirim, menunggu verifikasi admin</b><p>Dikirim ${ago(Date.parse(last.created_at))} lalu · ${rp(last.amount)}. Barang otomatis tampil setelah disetujui.</p></div><button class="btn ghost" data-tab="home">Kembali ke beranda</button>`;return}
+  if(SD&&(i.pay!=='approved'||i.status!=='available')){B.innerHTML=head+`<div class="paystate bad"><b>Barang ini belum bisa disundul</b><p>${i.status!=='available'?'Barang sudah selesai.':'Selesaikan dulu pembayaran biaya posting.'}</p></div><button class="btn ghost" id="payGo">Kembali</button>`;
+    $('#payGo').onclick=()=>go('detail',{id});return}
+  if(!SD&&i.pay==='approved'){B.innerHTML=head+`<div class="paystate ok">${svg('check')}<b>Pembayaran disetujui</b><p>Barangmu sudah tampil di beranda kampus.</p></div><button class="btn" id="payGo">Lihat barang</button>`;
+    $('#payGo').onclick=()=>go('detail',{id});return}
+  if(last&&last.status==='pending'){B.innerHTML=head+`<div class="paystate">${svg('qr')}<b>Bukti terkirim, menunggu verifikasi admin</b><p>Dikirim ${ago(Date.parse(last.created_at))} lalu · ${rp(last.amount)}. ${SD?'Barang otomatis naik ke atas 24 jam setelah disetujui.':'Barang otomatis tampil setelah disetujui.'}</p></div><button class="btn ghost" data-tab="home">Kembali ke beranda</button>`;return}
   B.innerHTML=head+(last&&last.status==='rejected'?`<div class="paystate bad"><b>Pembayaran sebelumnya ditolak</b><p>Alasan: ${esc((last.note||'Bukti tidak sesuai').replace(/[.\s]+$/,''))}. Silakan bayar lagi dan kirim ulang bukti.</p></div>`:'')+
-   `<div class="qrbox">${QRIS_DEMO?`<div class="demotag">Mode demo · QRIS contoh, tidak menerima uang sungguhan. Upload screenshot apa saja sebagai bukti.</div>`:''}<small>Bayar biaya posting</small><div class="amt">${rp(FEE)}</div>
-     ${QRIS_PAYLOAD?`<img id="dynQr" alt="QRIS ${esc(QRIS_NAME)} nominal ${rp(FEE)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet. <b>Nominal ${rp(FEE)} sudah otomatis terisi</b>, tinggal konfirmasi bayar.</p>
-       <a class="btn ghost" id="dynDl" download="QRIS-ReUse-${FEE}.png">Simpan gambar QRIS</a>`
-     :QRIS?`<img src="${esc(QRIS)}" alt="QRIS ${esc(QRIS_NAME)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet, lalu ketik nominal <b>${rp(FEE)}</b>.</p>
+   `<div class="qrbox">${QRIS_DEMO?`<div class="demotag">Mode demo · QRIS contoh, tidak menerima uang sungguhan. Upload screenshot apa saja sebagai bukti.</div>`:''}<small>${SD?'Bayar sundul 24 jam':'Bayar biaya posting'}</small><div class="amt">${rp(AMT)}</div>
+     ${QRIS_PAYLOAD?`<img id="dynQr" alt="QRIS ${esc(QRIS_NAME)} nominal ${rp(AMT)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet. <b>Nominal ${rp(AMT)} sudah otomatis terisi</b>, tinggal konfirmasi bayar.</p>
+       <a class="btn ghost" id="dynDl" download="QRIS-ReUse-${AMT}.png">Simpan gambar QRIS</a>`
+     :QRIS?`<img src="${esc(QRIS)}" alt="QRIS ${esc(QRIS_NAME)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet, lalu ketik nominal <b>${rp(AMT)}</b>.</p>
        <a class="btn ghost" href="${esc(QRIS)}" download="QRIS-ReUse">Simpan gambar QRIS</a>`
      :`<div class="qrnone">${svg('qr')}<span>QRIS belum dipasang admin. Coba lagi nanti.</span></div>`}</div>
    <span class="lbl">Bukti pembayaran <small>(screenshot transaksi berhasil)</small></span>
    <label class="proof" id="proofL"><input type="file" accept="image/*" id="proofI" hidden><span id="proofT">${svg('camera')}Upload screenshot bukti bayar</span></label>
    <div class="err" id="payE"></div>
    <button class="btn" id="paySend" ${QRIS||QRIS_PAYLOAD?'':'disabled'}>Kirim bukti bayar</button>`;
-  if(QRIS_PAYLOAD){try{await loadScript('js/vendor/qrcode.js');const qr=qrcode(0,'M');qr.addData(window.QRIS.withAmount(QRIS_PAYLOAD,FEE));qr.make();
+  if(QRIS_PAYLOAD){try{await loadScript('js/vendor/qrcode.js');const qr=qrcode(0,'M');qr.addData(window.QRIS.withAmount(QRIS_PAYLOAD,AMT));qr.make();
     const url=qr.createDataURL(8,4);$('#dynQr').src=url;$('#dynDl').href=url}catch(e){$('#payE').textContent='QRIS tidak bisa dibuat: '+e.message}}
   $('#proofI').onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{payProof=await shrinkTo(f,1400);$('#proofT').innerHTML=`<img src="${payProof.url}" alt="">`;$('#payE').textContent=''}catch(_){$('#payE').textContent='Gagal membaca gambar.'}};
   $('#paySend').onclick=async()=>{if(!payProof){$('#payE').textContent='Upload screenshot bukti bayar dulu.';return}
     const btn=$('#paySend');btn.disabled=true;btn.textContent='Mengirim…';
-    const path=`${S.uid}/${id}-${Date.now()}.jpg`;
+    const path=`${S.uid}/${kind}-${id}-${Date.now()}.jpg`;
     const up=await sb.storage.from(PAY_BUCKET).upload(path,payProof.blob,{contentType:'image/jpeg'});
     if(up.error){$('#payE').textContent=errMsg(up.error);btn.disabled=false;btn.textContent='Kirim bukti bayar';return}
-    const {error}=await sb.from('payments').insert({item_id:id,owner:S.uid,amount:FEE,proof_path:path});
+    const {error}=await sb.from('payments').insert({item_id:id,owner:S.uid,amount:AMT,proof_path:path,kind});
     if(error){$('#payE').textContent=errMsg(error);btn.disabled=false;btn.textContent='Kirim bukti bayar';return}
-    toast('Bukti terkirim. Admin akan memverifikasi.');renderPay(id)};
+    toast('Bukti terkirim. Admin akan memverifikasi.');renderPay(id,kind)};
 }
 function readQr(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const im=new Image();im.onerror=()=>{URL.revokeObjectURL(u);rej()};im.onload=()=>{
   const tries=[1,Math.min(1,1000/Math.max(im.width,im.height)),Math.min(1,600/Math.max(im.width,im.height))];
@@ -596,28 +624,42 @@ const dayTxt=ts=>{const d=new Date(ts),t=new Date();const y=new Date(t);y.setDat
   return d.toDateString()===t.toDateString()?'Hari ini':d.toDateString()===y.toDateString()?'Kemarin':d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})};
 const otherName=cv=>cv.buyer_id===S.uid?cv.seller?.name:cv.buyer?.name;
 
-async function renderChats(){$('#nDot').hidden=true;const L=$('#cList');
+/* Tanda dibaca: ✓ terkirim, ✓✓ hijau = sudah dibaca lawan bicara */
+const myReadAt=cv=>Date.parse(cv.buyer_id===S.uid?cv.buyer_read_at:cv.seller_read_at)||0;
+const theirReadAt=cv=>Date.parse(cv.buyer_id===S.uid?cv.seller_read_at:cv.buyer_read_at)||0;
+let UNREAD={};
+async function refreshUnread(){const {data,error}=await sb.rpc('unread_counts');if(error)return UNREAD;
+  UNREAD={};(data||[]).forEach(r=>UNREAD[r.conversation_id]=+r.n);
+  const tot=Object.values(UNREAD).reduce((a,b)=>a+b,0);$('#nDot').hidden=!tot;$('#nDot').textContent=tot>9?'9+':tot||'';return UNREAD}
+let chatsT;const renderChatsSoon=()=>{clearTimeout(chatsT);chatsT=setTimeout(()=>cur==='chats'&&renderChats(),250)};
+async function renderChats(){const L=$('#cList');
   if(!L.children.length)L.innerHTML=`<div class="empty">Memuat chat…</div>`;
-  const {data,error}=await sb.from('conversations').select(CONV_SEL).order('last_message_at',{ascending:false});
+  const [{data,error}]=await Promise.all([sb.from('conversations').select(CONV_SEL).order('last_message_at',{ascending:false}),refreshUnread()]);
   if(cur!=='chats')return;
   if(error){L.innerHTML=`<div class="empty">${esc(errMsg(error))}</div>`;return}
-  L.innerHTML=data.length?data.map(cv=>`<button class="crow-i" data-cv="${cv.id}"><img src="${esc(cv.items?.photos?.[0]||'')}" alt="">
+  L.innerHTML=data.length?data.map(cv=>{const n=UNREAD[cv.id]||0,mineLast=cv.last_sender===S.uid,seen=mineLast&&theirReadAt(cv)>=Date.parse(cv.last_message_at);
+    return `<button class="crow-i ${n?'unread':''}" data-cv="${cv.id}"><img src="${esc(cv.items?.photos?.[0]||'')}" alt="">
     <div class="tx"><b>${esc(otherName(cv)||'Mahasiswa')}</b><small>${cv.seller_id===S.uid?'Barangmu · ':''}${esc(cv.items?.title||'Barang dihapus')}</small>
-    <p>${cv.last_message?(cv.last_sender===S.uid?'Kamu: ':'')+esc(cv.last_message):'Belum ada pesan'}</p></div><time>${ago(Date.parse(cv.last_message_at))}</time></button>`).join('')
+    <p>${mineLast&&cv.last_message?`<i class="tk ${seen?'rd':''}" aria-label="${seen?'Dibaca':'Terkirim'}">${svg(seen?'dbl':'check')}</i>`:''}${cv.last_message?(mineLast?'Kamu: ':'')+esc(cv.last_message):'Belum ada pesan'}</p></div>
+    <div class="cmeta"><time>${ago(Date.parse(cv.last_message_at))}</time>${n?`<em class="ub" aria-label="${n} pesan belum dibaca">${n>99?'99+':n}</em>`:''}</div></button>`}).join('')
    :`<div class="empty">Belum ada chat.<br>Buka barang di beranda lalu ketuk <b>Chat pemilik</b>.</div>`;}
 $('#cList').onclick=e=>{const b=e.target.closest('[data-cv]');if(b)go('chat',{id:b.dataset.cv})};
 
-let seenMsg=new Set(),lastDay='';
+let seenMsg=new Set(),lastDay='',OTHER_READ=0,readT;
+function paintTicks(){document.querySelectorAll('#msgs .msg.me:not(.pending):not(.rd)').forEach(el=>{if(+el.dataset.ts<=OTHER_READ){el.classList.add('rd');const t=el.querySelector('.tk');if(t)t.innerHTML=svg('dbl')}})}
+function markRead(id){clearTimeout(readT);readT=setTimeout(async()=>{if(cur!=='chat'||curConv!==id||document.hidden)return;await sb.rpc('mark_read',{p_conv:id});refreshUnread()},300)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&cur==='chat'&&curConv)markRead(curConv)});
 function appendMsg(m,pending){if(m.id&&seenMsg.has(m.id))return;if(m.id)seenMsg.add(m.id);
   const M=$('#msgs');M.querySelector('.chempty')?.remove();
   const d=dayTxt(m.created_at);if(d!==lastDay){lastDay=d;M.insertAdjacentHTML('beforeend',`<div class="mday">${d}</div>`)}
-  M.insertAdjacentHTML('beforeend',`<div class="msg ${m.sender===S.uid?'me':''} ${pending?'pending':''}" ${m.id?`data-mid="${m.id}"`:''}>${esc(m.body)}<time>${hm(m.created_at)}</time></div>`);
+  const me=m.sender===S.uid,ts=Date.parse(m.created_at),rd=me&&!pending&&ts<=OTHER_READ;
+  M.insertAdjacentHTML('beforeend',`<div class="msg ${me?'me':''} ${pending?'pending':''} ${rd?'rd':''}" ${m.id?`data-mid="${m.id}"`:''} data-ts="${ts}">${esc(m.body)}<time>${hm(m.created_at)}${me?`<i class="tk">${svg(rd?'dbl':'check')}</i>`:''}</time></div>`);
   M.scrollTop=M.scrollHeight;}
 function templates(cv){const it=cv.items||{},cod=it.cod_place||campusOf(it.campus).cod[it.cod]||'titik COD';
   if(cv.seller_id===S.uid)return['Masih ada, kak!',`Bisa ketemu di ${cod} ya.`,'Kapan kamu bisa COD?'];
   return[`Halo, ${it.title||'barang ini'} masih ada?`,`Bisa COD di ${cod}?`,
     it.mode==='Sell'?'Harganya masih bisa nego?':it.mode==='Swap'?`Aku punya barang buat ditukar, boleh kirim fotonya?`:'Boleh aku ambil barangnya?'];}
-async function renderChat(id){curConv=id;seenMsg=new Set();lastDay='';
+async function renderChat(id){curConv=id;seenMsg=new Set();lastDay='';OTHER_READ=0;$('#chFlag').hidden=true;
   $('#msgs').innerHTML='<div class="chempty">Memuat pesan…</div>';$('#chHead').innerHTML='';$('#tpls').innerHTML='';$('#chI').value='';
   const [{data:cv,error},{data:msgs},{data:deals}]=await Promise.all([
     sb.from('conversations').select(CONV_SEL).eq('id',id).single(),
@@ -625,7 +667,8 @@ async function renderChat(id){curConv=id;seenMsg=new Set();lastDay='';
     sb.from('deals').select('*').eq('conversation_id',id).order('created_at',{ascending:true})]);
   if(curConv!==id)return;
   if(error||!cv){toast('Chat tidak ditemukan');go('chats');return}
-  curCv=cv;const it=cv.items||{};
+  curCv=cv;OTHER_READ=theirReadAt(cv);const it=cv.items||{};markRead(id);
+  $('#chFlag').hidden=false;$('#chFlag').onclick=()=>reportModal({target:cv.buyer_id===S.uid?cv.seller_id:cv.buyer_id,name:otherName(cv)||'pengguna ini',item:it.id&&(it.owner===S.uid?it.taken_by:it.owner)===(cv.buyer_id===S.uid?cv.seller_id:cv.buyer_id)?it.id:null,title:it.title,conv:cv.id});
   $('#chHead').innerHTML=`<img src="${esc(it.photos?.[0]||'')}" alt=""><div><b>${esc(otherName(cv)||'Mahasiswa')} <span class="vb">${VB}</span></b><small>${esc(it.title||'Barang dihapus')} · ${it.mode==='Sell'?rp(it.price):it.mode==='Swap'?'Tukar':'Gratis'}</small></div>`;
   $('#chHead').onclick=()=>it.id&&openDetail(it.id);
   const feed=[...(msgs||[]).map(m=>({...m,_t:'m'})),...(deals||[]).map(d=>({...d,_t:'d'}))].sort((a,b)=>a.created_at<b.created_at?-1:1);
@@ -645,19 +688,26 @@ async function sendMsg(body){const id=curConv;if(!id)return;
   const {data,error}=await sb.from('messages').insert({conversation_id:id,sender:S.uid,body}).select().single();
   if(error){tmpEl?.remove();toast('Pesan gagal terkirim: '+errMsg(error));$('#chI').value=body;return}
   if(seenMsg.has(data.id)){tmpEl?.remove();return}
-  seenMsg.add(data.id);if(tmpEl){tmpEl.classList.remove('pending');tmpEl.dataset.mid=data.id}}
+  seenMsg.add(data.id);if(tmpEl){tmpEl.classList.remove('pending');tmpEl.dataset.mid=data.id;tmpEl.dataset.ts=Date.parse(data.created_at)}}
 
 /* ---------- Realtime: beranda live + pesan masuk ---------- */
 let channel=null,homeT;
-function startRealtime(){if(channel)return;
+function startRealtime(){refreshUnread();if(channel)return;
   channel=sb.channel('reuse-live')
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'items'},({new:r})=>{
      if(r.owner===S.uid)return;
      if(cur==='home'&&r.campus===S.filter.campus){clearTimeout(homeT);homeT=setTimeout(renderHome,400);toast('Ada barang baru di '+campusOf(r.campus).s)}})
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},({new:m})=>{
-     if(cur==='chat'&&m.conversation_id===curConv){appendMsg(m);return}
+     if(cur==='chat'&&m.conversation_id===curConv){appendMsg(m);if(m.sender!==S.uid)markRead(m.conversation_id);return}
      if(m.sender===S.uid)return;
-     if(cur==='chats')renderChats();else{$('#nDot').hidden=false;toast('Pesan baru: '+m.body.slice(0,40))}})
+     if(cur==='chats')renderChatsSoon();else{refreshUnread();toast('Pesan baru: '+m.body.slice(0,40))}})
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'conversations'},({new:cv})=>{
+     if(cur==='chat'&&cv.id===curConv){const t=theirReadAt(cv);if(t>OTHER_READ){OTHER_READ=t;paintTicks()}}
+     else if(cur==='chats')renderChatsSoon()})
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'reports'},({new:r})=>{if(!S.admin||r.reporter===S.uid)return;
+     refreshPending();toast('Komplain baru masuk. Buka Profil → Panel admin.');if(cur==='admin'&&admTab==='komplain')renderAdmin()})
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'reports'},({new:r})=>{if(S.admin)refreshPending();if(r.reporter!==S.uid)return;
+     toast(`Komplainmu ${RSTAT[r.status].toLowerCase()}${r.admin_note?': '+r.admin_note:''}`);if(cur==='profile')renderProfile()})
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'deals'},({new:d})=>onDeal(d,true))
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'deals'},({new:d})=>onDeal(d,false))
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'payments'},({new:p})=>{if(!S.admin||p.owner===S.uid)return;
@@ -668,21 +718,26 @@ function startRealtime(){if(channel)return;
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'reviews'},({new:v})=>{if(v.seller!==S.uid)return;
      toast(`Kamu dapat rating ${v.stars}★ dari pembeli`);if(cur==='profile')renderProfile()})
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'payments'},({new:p})=>{if(S.admin)refreshPending();if(p.owner!==S.uid)return;
-     delete S.cache[p.item_id];toast(p.status==='approved'?'Pembayaran disetujui. Barangmu sudah tampil!':'Pembayaran ditolak'+(p.note?': '+p.note:''));
-     if(cur==='pay'&&payItem===p.item_id)renderPay(p.item_id);else if(cur==='profile')renderProfile();})
+     delete S.cache[p.item_id];const sd=p.kind==='sundul';
+     toast(p.status==='approved'?(sd?'Sundul disetujui. Barangmu di urutan teratas 24 jam!':'Pembayaran disetujui. Barangmu sudah tampil!'):(sd?'Bayar sundul ditolak':'Pembayaran ditolak')+(p.note?': '+p.note:''));
+     if(cur==='pay'&&payItem===p.item_id)renderPay(p.item_id,payKind);else if(cur==='detail'&&sd)renderDetail(p.item_id);else if(cur==='profile')renderProfile();})
    .subscribe();}
 function onDeal(d,isNew){
   if(cur==='chat'&&d.conversation_id===curConv){putDeal(d);return}
   const fromOther=isNew?d.proposer!==S.uid:d.proposer===S.uid;
   if(!fromOther)return;
-  if(cur==='chats')renderChats();else{$('#nDot').hidden=false;toast(isNew?'Ajakan COD baru di chat':'Ajakan COD-mu '+DEAL_TXT[d.status].toLowerCase())}}
+  if(cur==='chats')renderChatsSoon();else{$('#nDot').hidden=false;toast(isNew?'Ajakan COD baru di chat':'Ajakan COD-mu '+DEAL_TXT[d.status].toLowerCase())}}
 
 /* ---------- Profil ---------- */
 async function renderProfile(){const c=myCampus();$('#pfAv').textContent=S.me.name[0];$('#pfN').innerHTML=esc(S.me.name)+` <span class="vb">${VB}</span>`;
   $('#pfE').textContent=S.email;$('#pfV').innerHTML=VB+`<span><b>Terverifikasi via ${PWMODE?'email kampus':'OTP'}</b><br>Lencana ini tampil di setiap barang yang kamu posting.</span>`;
   $('#pfC').textContent=c.s;$('#adminBtn').hidden=!S.admin;
   $('#pfStats').innerHTML=skel(3);$('#pfItems').innerHTML='';
-  const [d,rt,todo]=await Promise.all([myImpact(),sellerRating(S.uid),toRate()]);if(cur!=='profile')return;
+  const [d,rt,todo,reps]=await Promise.all([myImpact(),sellerRating(S.uid),toRate(),myReports()]);if(cur!=='profile')return;
+  $('#pfReports').hidden=!reps.length;
+  $('#pfReports').innerHTML=reps.length?`<h3>Komplain saya</h3>`+reps.map(r=>`<div class="rep"><div class="rh"><b>${esc(r.reason)}</b><em class="rst ${r.status}">${RSTAT[r.status]}</em></div>
+    <small>Terhadap ${esc(r.tg?.name||'pengguna')}${r.item_title?' · '+esc(r.item_title):''} · ${ago(Date.parse(r.created_at))} lalu</small>
+    ${r.admin_note?`<p class="anote">${svg('shield')}<span><b>Admin:</b> ${esc(r.admin_note)}</span></p>`:''}</div>`).join(''):'';
   $('#pfRate').innerHTML=rt&&rt.total?`${starRow(rt.avg_stars)}<b>${fmtStar(rt.avg_stars)}</b><span>dari ${rt.total} ulasan pembeli</span>${svg('right')}`:`${starRow(0)}<span>Belum ada rating sebagai penjual</span>`;
   $('#pfRate').onclick=()=>rt&&rt.total&&reviewsModal(S.uid,S.me.name);
   $('#pfTodo').hidden=!todo.length;
@@ -691,32 +746,49 @@ async function renderProfile(){const c=myCampus();$('#pfAv').textContent=S.me.na
   $('#pfStats').innerHTML=[['Diposting',d.posted],['Selesai',d.done],['Didapat',d.got],['COD disepakati',d.deals]].map(([l,n])=>`<div><b>${n}</b><small>${l}</small></div>`).join('');
   const lines=impactText(d);
   $('#pfImpact').innerHTML=lines.length?lines.map(l=>`<div>${svg('check')}<span>${l}</span></div>`).join(''):'<p>Belum ada barang yang selesai. Tandai barangmu “selesai” setelah berpindah tangan untuk melihat dampaknya di sini.</p>';
-  $('#pfItems').innerHTML=d.items.length?d.items.map(x=>`<button class="myi" data-id="${x.id}"><img src="${esc(x.img[0])}" alt=""><span><b>${esc(x.t)}</b><small>${x.m} · ${ago(x.ts)} lalu</small></span><em class="${x.pay!=='approved'?'wait':x.status==='done'?'done':''}">${x.pay==='pending'?'Belum tampil':x.pay==='rejected'?'Bayar ditolak':x.status==='done'?'Selesai':'Tersedia'}</em></button>`).join('')
+  $('#pfItems').innerHTML=d.items.length?d.items.map(x=>`<button class="myi" data-id="${x.id}"><img src="${esc(x.img[0])}" alt=""><span><b>${esc(x.t)}</b><small>${x.m} · ${ago(x.ts)} lalu</small></span><em class="${x.pay!=='approved'?'wait':x.status==='done'?'done':''}">${x.pay==='pending'?'Belum tampil':x.pay==='rejected'?'Bayar ditolak':x.status==='done'?'Selesai':boosted(x)?'Disundul':'Tersedia'}</em></button>`).join('')
     :'<p class="muted">Belum ada barang. Posting lewat tombol +.</p>';}
 $('#pfItems').onclick=e=>{const b=e.target.closest('[data-id]');if(b)openDetail(b.dataset.id)};
-$('#adminBtn').onclick=()=>{if(PEND>0)admTab='bayar';go('admin')};
+$('#adminBtn').onclick=()=>{if(PEND_PAY>0)admTab='bayar';else if(PEND_REP>0)admTab='komplain';go('admin')};
 let PEND=0;
-async function refreshPending(){if(!S.admin)return;const {data}=await sb.rpc('admin_pay_stats');PEND=data?.pending||0;
-  $('#pfDot').hidden=!PEND;$('#admCount').textContent=PEND?PEND+' menunggu':'';$('#admCount').hidden=!PEND}
+let PEND_PAY=0,PEND_REP=0;
+async function refreshPending(){if(!S.admin)return;const {data}=await sb.rpc('admin_pay_stats');PEND_PAY=data?.pending||0;PEND_REP=data?.reports_open||0;PEND=PEND_PAY+PEND_REP;
+  $('#pfDot').hidden=!PEND;$('#admCount').textContent=[PEND_PAY&&PEND_PAY+' bayar',PEND_REP&&PEND_REP+' komplain'].filter(Boolean).join(' · ');$('#admCount').hidden=!PEND}
 $('#editName').onclick=()=>{modal(`<h2>Ubah nama</h2><p>Nama ini tampil di barang dan chat kamu.</p><input class="field" id="enI" maxlength="40" value="${esc(S.me.name)}"><div class="err" id="enE"></div><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="enOk">Simpan</button></div>`);
   $('#enOk').onclick=async()=>{const v=$('#enI').value.trim();if(v.length<2){$('#enE').textContent='Nama minimal 2 huruf.';return}
     $('#enOk').disabled=true;const {data,error}=await sb.from('profiles').update({name:v}).eq('id',S.uid).select(PROF_COLS).single();
     if(error){$('#enE').textContent=errMsg(error);$('#enOk').disabled=false;return}
     S.me=data;S.cache={};closeModal();toast('Nama disimpan');renderProfile()}};
 
+/* ---------- Komplain ---------- */
+const REASONS=['Penipuan','Barang tidak sesuai','Tidak datang saat COD','Kata-kata kasar','Konten tidak pantas','Lainnya'];
+const RSTAT={open:'Terkirim',process:'Sedang diproses',resolved:'Selesai',rejected:'Ditolak'};
+const REP_SEL='*, rp:profiles!reports_reporter_fkey(name), tg:profiles!reports_target_fkey(name)';
+async function myReports(){const {data}=await sb.from('reports').select(REP_SEL).eq('reporter',S.uid).order('created_at',{ascending:false}).limit(20);return data||[]}
+function reportModal({target,name,item,title,conv}){let why='';
+  modal(`<div class="mi" data-ic="flag"></div><h2>Komplain</h2><p>Laporkan <b>${esc(name)}</b>${title?` terkait “${esc(title)}”`:''}. Hanya admin yang bisa membaca komplain ini, ${esc(name)} tidak diberi tahu siapa pelapornya.</p>
+   <span class="lbl">Masalahnya apa?</span><div class="rsn" id="rsn">${REASONS.map(r=>`<button type="button" data-r="${esc(r)}">${esc(r)}</button>`).join('')}</div>
+   <label class="lbl" for="rpD">Ceritakan singkat <small>(opsional)</small></label><textarea class="field" id="rpD" rows="3" maxlength="1000" placeholder="Mis. barang yang datang beda dengan foto, penjual tidak datang di titik COD…"></textarea>
+   <div class="err" id="rpE"></div><div class="row2"><button class="btn ghost" data-close>Batal</button><button class="btn" id="rpOk">Kirim komplain</button></div>`);
+  $('#rsn').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;why=b.dataset.r;$('#rsn').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('#rpE').textContent=''};
+  $('#rpOk').onclick=async()=>{if(!why){$('#rpE').textContent='Pilih salah satu masalah dulu.';return}
+    $('#rpOk').disabled=true;const {error}=await sb.from('reports').insert({reporter:S.uid,target,item_id:item||null,conversation_id:conv||null,reason:why,detail:$('#rpD').value.trim()||null});
+    if(error){$('#rpE').textContent=error.code==='23505'||/duplicate|reports_one_open/.test(error.message)?'Kamu sudah punya komplain aktif untuk ini. Lihat statusnya di Profil.':errMsg(error);$('#rpOk').disabled=false;return}
+    closeModal();toast('Komplain terkirim. Admin akan menindaklanjuti, pantau statusnya di Profil.')}}
+
 /* ---------- Panel admin ---------- */
 let admTab='ringkas';
 async function renderAdmin(){if(!S.admin){go('profile');return}
   document.querySelectorAll('#admTabs button').forEach(b=>b.classList.toggle('on',b.dataset.at===admTab));
   const B=$('#admBody');B.innerHTML=skel(4);
-  try{({ringkas:admSummary,bayar:admPay,barang:admItems,pengguna:admUsers,sundul:admSundul,kampus:admCampus}[admTab])(B)}catch(e){B.innerHTML=`<div class="empty">${esc(errMsg(e))}</div>`}}
+  try{({ringkas:admSummary,bayar:admPay,komplain:admReports,barang:admItems,pengguna:admUsers,sundul:admSundul,kampus:admCampus}[admTab])(B)}catch(e){B.innerHTML=`<div class="empty">${esc(errMsg(e))}</div>`}}
 $('#admTabs').onclick=e=>{const b=e.target.closest('[data-at]');if(b){admTab=b.dataset.at;renderAdmin()}};
 $('#admBack').onclick=()=>go('profile');
 const tile=(n,l,s2)=>`<div class="tile"><b>${n}</b><small>${l}</small>${s2?`<em>${s2}</em>`:''}</div>`;
 async function admSummary(B){const {data:st,error}=await sb.rpc('admin_stats');if(error)throw error;
   const bm=st.by_mode||{},tot=(bm.Sell||0)+(bm.Swap||0)+(bm.Donate||0)||1;
   B.innerHTML=`<div class="tiles">${tile(st.users,'Pengguna',`+${st.users_7d} dalam 7 hari`)}${tile(st.items_active,'Barang aktif')}${tile(st.items_done,'Barang selesai',st.value_done?rp(st.value_done)+' terjual':'')}
-    ${tile(st.conversations,'Percakapan',`${st.messages} pesan`)}${tile(st.deals_accepted,'COD disepakati',`dari ${st.deals_total} ajakan`)}${tile(st.sundul_clicks,'Klik Sundul',`${st.sundul_users} pengguna`)}</div><div id="admPend"></div>
+    ${tile(st.conversations,'Percakapan',`${st.messages} pesan`)}${tile(st.deals_accepted,'COD disepakati',`dari ${st.deals_total} ajakan`)}${tile(st.sundul_clicks,'Tombol Sundul',`${st.sundul_users} pengguna`)}</div><div id="admPend"></div>
    <h3 class="ah">Barang per mode</h3><div class="bars">${['Sell','Swap','Donate'].map(m=>`<div><span>${m}</span><i style="--w:${Math.round((bm[m]||0)/tot*100)}%" class="m-${m}"></i><b>${bm[m]||0}</b></div>`).join('')}</div>
    <h3 class="ah">Per kampus</h3><div class="atable"><div class="ar head"><span>Kampus</span><span>Pengguna</span><span>Barang</span></div>${(st.by_campus||[]).map(r=>`<div class="ar"><span>${esc(campusOf(r.campus).s)}</span><span>${r.users}</span><span>${r.items}</span></div>`).join('')}</div>
    <p class="muted">Isi chat tidak bisa dibaca admin. Yang terlihat hanya jumlahnya.</p>`;
@@ -737,22 +809,23 @@ async function admPay(B){await loadSettings();
     sb.rpc('admin_pay_stats')]);
   if(error)throw error;
   const urls={};await Promise.all((pend||[]).map(async p=>{const {data}=await sb.storage.from(PAY_BUCKET).createSignedUrl(p.proof_path,600);urls[p.id]=data?.signedUrl}));
-  B.innerHTML=`<div class="tiles">${tile(st?.pending??0,'Menunggu verifikasi')}${tile(rp(st?.revenue??0),'Pemasukan',`${st?.approved??0} posting dibayar`)}</div>
+  B.innerHTML=`<div class="tiles">${tile(st?.pending??0,'Menunggu verifikasi')}${tile(rp(st?.revenue??0),'Pemasukan',`${st?.approved??0} pembayaran · ${st?.sundul_paid??0} sundul`)}</div>
    <h3 class="ah">Pengaturan QRIS</h3>
    <div class="cpc"><div class="qrset">${QRIS&&!QRIS_DEMO?`<img src="${esc(QRIS)}" alt="QRIS">`:`<div class="qrnone">${svg('qr')}<span>${QRIS_DEMO?'QRIS demo':'Belum ada QRIS'}</span></div>`}
-    <div><label class="lbl" for="stFee">Biaya per posting (Rp)</label><input class="field" id="stFee" inputmode="numeric" value="${FEE_SET}">
+    <div><div class="row2"><div><label class="lbl" for="stFee">Biaya posting (Rp)</label><input class="field" id="stFee" inputmode="numeric" value="${FEE_SET}"></div>
+    <div><label class="lbl" for="stSFee">Biaya sundul (Rp)</label><input class="field" id="stSFee" inputmode="numeric" value="${SFEE_SET}"></div></div>
     <label class="lbl" for="stName">Nama di QRIS</label><input class="field" id="stName" maxlength="60" value="${esc(QRIS_NAME)}"></div></div>
     <label class="proof sm"><input type="file" accept="image/png,image/jpeg,image/webp" id="stQr" hidden><span id="stQrT">${svg('qr')}${QRIS?'Ganti gambar QRIS':'Upload gambar QRIS'}</span></label>
-    ${QRIS_DEMO?`<div class="demotag">QRIS demo sedang aktif (tidak menerima uang). Upload QRIS asli untuk menerima pembayaran sungguhan.</div>`:''}<p class="muted">${QRIS_PAYLOAD?'Nominal otomatis aktif: pembeli tidak perlu mengetik nominal.':QRIS?'QRIS ini belum terbaca, jadi penjual harus mengetik nominal. Upload ulang gambar yang lebih jelas.':''} Isi 0 untuk menggratiskan posting. Barang yang diposting admin selalu langsung tampil.</p>
+    ${QRIS_DEMO?`<div class="demotag">QRIS demo sedang aktif (tidak menerima uang). Upload QRIS asli untuk menerima pembayaran sungguhan.</div>`:''}<p class="muted">${QRIS_PAYLOAD?'Nominal otomatis aktif: pembeli tidak perlu mengetik nominal.':QRIS?'QRIS ini belum terbaca, jadi penjual harus mengetik nominal. Upload ulang gambar yang lebih jelas.':''} Isi 0 untuk menggratiskan posting atau sundul. Barang yang diposting admin selalu langsung tampil.</p>
     <div class="err" id="stE"></div><button class="btn" id="stSave">Simpan pengaturan</button></div>
    <h3 class="ah">Menunggu verifikasi (${(pend||[]).length})</h3>`+
-   ((pend||[]).length?pend.map(p=>`<div class="payrow" data-pid="${p.id}">
+   ((pend||[]).length?pend.map(p=>`<div class="payrow" data-pid="${p.id}" data-kind="${p.kind||'post'}">
      <a href="${esc(urls[p.id]||'#')}" target="_blank" rel="noopener" class="proofimg">${urls[p.id]?`<img src="${esc(urls[p.id])}" alt="Bukti bayar">`:'Bukti'}</a>
-     <div class="pinfo"><b>${esc(p.items?.title||'Barang dihapus')}</b><small>${esc(p.owner_p?.name||'Mahasiswa')} · ${esc(campusOf(p.items?.campus).s)} · ${ago(Date.parse(p.created_at))} lalu</small>
+     <div class="pinfo"><b>${p.kind==='sundul'?'<em class="kind">Sundul</em>':'<em class="kind post">Posting</em>'}${esc(p.items?.title||'Barang dihapus')}</b><small>${esc(p.owner_p?.name||'Mahasiswa')} · ${esc(campusOf(p.items?.campus).s)} · ${ago(Date.parse(p.created_at))} lalu</small>
       <div class="amt sm">${rp(p.amount)}</div>
       <div class="da"><button class="btn ghost" data-pdec="rejected">Tolak</button><button class="btn" data-pdec="approved">Setujui</button></div></div></div>`).join('')
     :'<p class="muted">Tidak ada pembayaran yang menunggu.</p>')+
-   `<h3 class="ah">Riwayat</h3><div class="atable">${(done||[]).map(p=>`<div class="ar"><span>${esc(p.items?.title||'Barang dihapus')}<small style="display:block;color:var(--mut)">${esc(p.owner_p?.name||'')}${p.note?' · '+esc(p.note):''}</small></span><span>${rp(p.amount)}</span><span><em class="pst ${p.status}">${p.status==='approved'?'Setuju':'Tolak'}</em></span></div>`).join('')||'<div class="ar"><span>Belum ada</span></div>'}</div>`;
+   `<h3 class="ah">Riwayat</h3><div class="atable">${(done||[]).map(p=>`<div class="ar"><span>${p.kind==='sundul'?'<em class="kind">Sundul</em>':''}${esc(p.items?.title||'Barang dihapus')}<small style="display:block;color:var(--mut)">${esc(p.owner_p?.name||'')}${p.note?' · '+esc(p.note):''}</small></span><span>${rp(p.amount)}</span><span><em class="pst ${p.status}">${p.status==='approved'?'Setuju':'Tolak'}</em></span></div>`).join('')||'<div class="ar"><span>Belum ada</span></div>'}</div>`;
   let newQr=null;
   let newPayload=null;
   $('#stQr').onchange=async e=>{const f=e.target.files[0],E=$('#stE');if(!f)return;if(f.size>3*1024*1024){E.textContent='Maksimal 3 MB.';return}
@@ -762,20 +835,20 @@ async function admPay(B){await loadSettings();
       if(bad){E.textContent=bad;$('#stQrT').textContent='Upload ulang gambar QRIS';return}
       newQr=f;newPayload=code;const m=window.QRIS.merchant(code);if(m)$('#stName').value=m;
       $('#stQrT').textContent='QRIS terbaca: '+(m||f.name)+' · nominal akan otomatis'}catch(_){E.textContent='Gagal membaca gambar.'}};
-  $('#stSave').onclick=async()=>{const fee=+$('#stFee').value.replace(/\D/g,''),name=$('#stName').value.trim()||'ReUse',E=$('#stE');
-    if(!(fee>=0&&fee<=1000000)){E.textContent='Biaya tidak valid.';return}
+  $('#stSave').onclick=async()=>{const fee=+$('#stFee').value.replace(/\D/g,''),sfee=+$('#stSFee').value.replace(/\D/g,''),name=$('#stName').value.trim()||'ReUse',E=$('#stE');
+    if(!(fee>=0&&fee<=1000000&&sfee>=0&&sfee<=1000000)){E.textContent='Biaya tidak valid.';return}
     $('#stSave').disabled=true;let url=QRIS;
     if(newQr){const path=`qris-${Date.now()}.${(newQr.type.split('/')[1]||'png').replace('jpeg','jpg')}`;
       const up=await sb.storage.from('site').upload(path,newQr,{contentType:newQr.type});
       if(up.error){E.textContent=errMsg(up.error);$('#stSave').disabled=false;return}
       url=sb.storage.from('site').getPublicUrl(path).data.publicUrl}
-    for(const [key,value] of [['post_fee',fee],['qris_name',name],['qris_url',url],...(newPayload?[['qris_payload',newPayload],['qris_demo',false]]:[])]){
+    for(const [key,value] of [['post_fee',fee],['sundul_fee',sfee],['qris_name',name],['qris_url',url],...(newPayload?[['qris_payload',newPayload],['qris_demo',false]]:[])]){
       const {error}=await sb.from('settings').update({value}).eq('key',key);
       if(error){E.textContent=errMsg(error);$('#stSave').disabled=false;return}}
     toast('Pengaturan pembayaran disimpan');renderAdmin()};
-  B.onclick=async e=>{const b=e.target.closest('[data-pdec]');if(!b)return;const pid=b.closest('[data-pid]').dataset.pid,st=b.dataset.pdec;
+  B.onclick=async e=>{const b=e.target.closest('[data-pdec]');if(!b)return;const row=b.closest('[data-pid]'),pid=row.dataset.pid,st=b.dataset.pdec,sd=row.dataset.kind==='sundul';
     const decide=async note=>{const {error}=await sb.from('payments').update({status:st,note:note||null}).eq('id',pid);
-      if(error){toast(errMsg(error));return}closeModal();toast(st==='approved'?'Disetujui. Barang sudah tampil.':'Pembayaran ditolak');refreshPending();renderAdmin()};
+      if(error){toast(errMsg(error));return}closeModal();toast(st==='approved'?(sd?'Disetujui. Barang naik ke atas 24 jam.':'Disetujui. Barang sudah tampil.'):'Pembayaran ditolak');refreshPending();renderAdmin()};
     if(st==='approved'){b.disabled=true;decide(null);return}
     modal(`<h2>Tolak pembayaran?</h2><p>Penjual akan melihat alasan ini dan bisa mengirim ulang bukti.</p><input class="field" id="rjI" maxlength="200" value="Nominal atau bukti tidak sesuai"><div class="row2" style="margin-top:14px"><button class="btn ghost" data-close>Batal</button><button class="btn" id="rjOk" style="background:#B3261E">Tolak</button></div>`);
     $('#rjOk').onclick=()=>{$('#rjOk').disabled=true;decide($('#rjI').value.trim())}};}
@@ -817,15 +890,42 @@ function campusForm(c){const isNew=!c;c=c||{id:'',n:'',s:'',loc:'',dom:'',cod:[]
     closeModal();toast(isNew?'Kampus ditambahkan':'Kampus disimpan');renderAdmin()};}
 async function admUsers(B){const {data,error}=await sb.rpc('admin_users');if(error)throw error;
   B.innerHTML=`<p class="muted">${data.length} pengguna terdaftar.</p><div class="atable u"><div class="ar head"><span>Nama</span><span>Kampus</span><span>Barang</span></div>${data.map(u=>`<div class="ar"><span><b>${esc(u.name)}${u.is_admin?' <em class="adm">admin</em>':''}</b><small>${esc(u.email)} · gabung ${ago(Date.parse(u.created_at))} lalu</small></span><span>${esc(campusOf(u.campus).s)}</span><span>${u.items}${u.done?` <small>(${u.done} selesai)</small>`:''}</span></div>`).join('')}</div>`;}
-async function admSundul(B){const {data,error}=await sb.from('sundul_clicks').select('item_id,user_id,created_at').order('created_at',{ascending:false}).limit(1000);if(error)throw error;
-  const users=new Set(data.map(r=>r.user_id)),byItem={};data.forEach(r=>{byItem[r.item_id]=(byItem[r.item_id]||0)+1});
-  const ids=Object.keys(byItem).filter(x=>x!=='null');let titles={};
-  if(ids.length){const {data:its}=await sb.from('items').select('id,title').in('id',ids);(its||[]).forEach(t=>titles[t.id]=t.title)}
-  const {data:st}=await sb.rpc('admin_stats');const rate=st&&st.users?Math.round(users.size/st.users*100):0;
-  B.innerHTML=`<div class="tiles">${tile(data.length,'Total klik')}${tile(users.size,'Pengguna yang klik')}${tile(rate+'%','dari semua pengguna')}</div>
-   <p class="muted">Fake-door: tombol Sundul belum benar-benar menaikkan barang. Klik dicatat untuk mengukur minat sebelum fitur berbayar dibuat.</p>
-   <h3 class="ah">Barang yang paling sering disundul</h3><div class="atable"><div class="ar head"><span>Barang</span><span></span><span>Klik</span></div>${Object.entries(byItem).sort((a,b)=>b[1]-a[1]).map(([id,n])=>`<div class="ar"><span>${esc(titles[id]||'Barang dihapus')}</span><span></span><span>${n}</span></div>`).join('')||'<div class="ar"><span>Belum ada klik</span></div>'}</div>
-   <h3 class="ah">Klik terbaru</h3><div class="atable">${data.slice(0,15).map(r=>`<div class="ar"><span>${esc(titles[r.item_id]||'Barang dihapus')}</span><span></span><span>${ago(Date.parse(r.created_at))}</span></div>`).join('')}</div>`;}
+let repView='aktif';
+async function admReports(B){const act=repView==='aktif';
+  let q=sb.from('reports').select(REP_SEL).order('created_at',{ascending:act}).limit(100);
+  q=act?q.in('status',['open','process']):q.in('status',['resolved','rejected']);
+  const {data,error}=await q;if(error)throw error;
+  B.innerHTML=`<div class="chips sub"><button class="chip ${act?'on':''}" data-rv="aktif">Perlu ditangani</button><button class="chip ${act?'':'on'}" data-rv="selesai">Riwayat</button></div>
+   <p class="muted">Komplain hanya terlihat oleh pelapor dan admin. Admin tidak bisa membaca isi chat, jadi tanyakan detail ke pelapor atau periksa barangnya.</p>`+
+   (data.length?data.map(r=>`<div class="rep arep" data-rid="${r.id}"><div class="rh"><b>${esc(r.reason)}</b><em class="rst ${r.status}">${RSTAT[r.status]}</em></div>
+     <small><b>${esc(r.rp?.name||'Pengguna')}</b> melaporkan <b>${esc(r.tg?.name||'pengguna')}</b> · ${ago(Date.parse(r.created_at))} lalu${r.conversation_id?' · dari chat':''}</small>
+     ${r.item_title?`<button class="ritem" ${r.item_id?`data-id="${r.item_id}"`:'disabled'}>${svg('box')}${esc(r.item_title)}${r.item_id?'':' (sudah dihapus)'}</button>`:''}
+     ${r.detail?`<p class="rdet">${esc(r.detail)}</p>`:''}
+     ${r.admin_note?`<p class="anote">${svg('shield')}<span>${esc(r.admin_note)}</span></p>`:''}
+     ${act?`<div class="da">${r.status==='open'?`<button class="btn ghost" data-rs="process">Proses</button>`:''}<button class="btn ghost" data-rs="rejected">Tolak</button><button class="btn" data-rs="resolved">Selesai</button></div>`:''}</div>`).join('')
+    :`<p class="muted">${act?'Tidak ada komplain yang perlu ditangani.':'Belum ada riwayat komplain.'}</p>`);
+  B.onclick=e=>{const v=e.target.closest('[data-rv]');if(v){repView=v.dataset.rv;renderAdmin();return}
+    const it=e.target.closest('[data-id]');if(it){openDetail(it.dataset.id);return}
+    const b=e.target.closest('[data-rs]');if(!b)return;const rid=b.closest('[data-rid]').dataset.rid,st=b.dataset.rs;
+    const save=async note=>{const {error}=await sb.from('reports').update(note!==undefined?{status:st,admin_note:note||null}:{status:st}).eq('id',rid);
+      if(error){toast(errMsg(error));return}closeModal();toast('Komplain '+RSTAT[st].toLowerCase());refreshPending();renderAdmin()};
+    if(st==='process'){b.disabled=true;save();return}
+    modal(`<h2>${st==='resolved'?'Selesaikan komplain':'Tolak komplain'}</h2><p>Catatan ini dikirim ke pelapor.</p>
+     <input class="field" id="rnI" maxlength="300" value="${st==='resolved'?'Sudah kami tindak lanjuti. Terima kasih sudah melapor.':'Belum ada bukti pelanggaran.'}">
+     <div class="row2" style="margin-top:14px"><button class="btn ghost" data-close>Batal</button><button class="btn" id="rnOk">${st==='resolved'?'Selesai':'Tolak'}</button></div>`);
+    $('#rnOk').onclick=()=>{$('#rnOk').disabled=true;save($('#rnI').value.trim())}};}
+async function admSundul(B){const now=new Date().toISOString();
+  const [{data:act,error},{data:clk},{data:st},{data:pays}]=await Promise.all([
+    sb.from('items').select(ITEM_SEL).gt('bumped_until',now).eq('status','available').order('bumped_until',{ascending:true}),
+    sb.from('sundul_clicks').select('user_id').limit(5000),sb.rpc('admin_pay_stats'),
+    sb.from('payments').select('*, items(title), owner_p:profiles!payments_owner_fkey(name)').eq('kind','sundul').order('created_at',{ascending:false}).limit(15)]);
+  if(error)throw error;
+  const live=(act||[]).map(mapItem).filter(boosted),users=new Set((clk||[]).map(r=>r.user_id)).size;
+  B.innerHTML=`<div class="tiles">${tile(live.length,'Sedang disundul')}${tile(rp(st?.sundul_revenue??0),'Pemasukan sundul',`${st?.sundul_paid??0} kali dibayar`)}${tile((clk||[]).length,'Tombol diketuk',`${users} pengguna`)}</div>
+   <p class="muted">Sundul menaikkan barang ke urutan teratas beranda kampusnya selama 24 jam. Biaya ${SFEE?rp(SFEE):'gratis'} (ubah di tab Bayar). Bukti bayar sundul diverifikasi di tab Bayar, sama seperti biaya posting.</p>
+   <h3 class="ah">Sedang disundul</h3>${live.length?live.map(x=>`<button class="myi" data-id="${x.id}"><img src="${esc(x.img[0])}" alt=""><span><b>${esc(x.t)}</b><small>${esc(x.by)} · ${esc(campusOf(x.campus).s)}</small></span><em>sisa ${leftTxt(x.bumpUntil-Date.now())}</em></button>`).join(''):'<p class="muted">Belum ada barang yang disundul.</p>'}
+   <h3 class="ah">Pembayaran sundul terbaru</h3><div class="atable">${(pays||[]).map(p=>`<div class="ar"><span>${esc(p.items?.title||'Barang dihapus')}<small style="display:block;color:var(--mut)">${esc(p.owner_p?.name||'')} · ${ago(Date.parse(p.created_at))} lalu</small></span><span>${rp(p.amount)}</span><span><em class="pst ${p.status}">${p.status==='approved'?'Setuju':p.status==='rejected'?'Tolak':'Menunggu'}</em></span></div>`).join('')||'<div class="ar"><span>Belum ada</span></div>'}</div>`;
+  B.onclick=e=>{const b=e.target.closest('[data-id]');if(b)go('detail',{id:b.dataset.id})};}
 $('#logout').onclick=async()=>{if(channel){sb.removeChannel(channel);channel=null}await sb.auth.signOut();S.admin=false;
   S=fresh();$('#emailI').value='';$('#pwI').value='';$('#cList').innerHTML='';$('#nDot').hidden=true;go('onb')};
 

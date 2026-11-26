@@ -288,7 +288,7 @@
 <!-- CHAT ROOM (PBI-08) -->
 <section class="screen" id="chat">
   <div class="top"><button class="ibtn" id="chBack" aria-label="Kembali"><span data-ic="left"></span></button>
-    <div class="chhead" id="chHead"></div></div>
+    <div class="chhead" id="chHead"></div><button class="ibtn flag" id="chFlag" aria-label="Komplain" hidden><span data-ic="flag"></span></button></div>
   <div class="msgs" id="msgs"></div>
   <button class="chrate" id="chRate" hidden><span data-ic="star"></span>Barang sudah kamu terima. Beri rating penjual</button>
   <div class="composer">
@@ -306,7 +306,7 @@
 <!-- ADMIN -->
 <section class="screen" id="admin">
   <div class="top"><button class="ibtn" id="admBack" aria-label="Kembali"><span data-ic="left"></span></button><h1>Panel admin</h1></div>
-  <div class="chips" id="admTabs"><button class="chip" data-at="ringkas">Ringkasan</button><button class="chip" data-at="bayar">Bayar</button><button class="chip" data-at="barang">Barang</button><button class="chip" data-at="pengguna">Pengguna</button><button class="chip" data-at="sundul">Sundul</button><button class="chip" data-at="kampus">Kampus</button></div>
+  <div class="chips" id="admTabs"><button class="chip" data-at="ringkas">Ringkasan</button><button class="chip" data-at="bayar">Bayar</button><button class="chip" data-at="komplain">Komplain</button><button class="chip" data-at="barang">Barang</button><button class="chip" data-at="pengguna">Pengguna</button><button class="chip" data-at="sundul">Sundul</button><button class="chip" data-at="kampus">Kampus</button></div>
   <div class="admbody" id="admBody"></div>
 </section>
 
@@ -317,6 +317,7 @@
     <div class="verif" style="text-align:left;margin-top:14px" id="pfV"></div></div>
   <div class="pfsec"><button class="pfrate" id="pfRate"></button></div>
   <div class="pfsec" id="pfTodo" hidden></div>
+  <div class="pfsec" id="pfReports" hidden></div>
   <div class="pfsec"><h3>Aktivitas</h3><div class="pfstats" id="pfStats"></div></div>
   <div class="pfsec"><h3>Dampakmu</h3><div class="impact" id="pfImpact"></div></div>
   <div class="pfsec"><h3>Barangku</h3><div id="pfItems"></div></div>

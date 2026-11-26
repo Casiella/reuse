@@ -136,5 +136,61 @@ select pg_temp.uji('Rating: B ubah bintang sendiri', :B, 'b@mail.unpad.ac.id', $
 select pg_temp.uji('Rating: rata-rata penjual terbaca', :X, 'x@itb.ac.id', $q$select * from seller_ratings where seller='aaaaaaaa-0000-0000-0000-000000000001' and avg_stars=4 and total=1$q$, 'rows:1');
 select pg_temp.uji('Rating: admin hapus ulasan', :Z, 'admin@unpad.ac.id', $q$delete from reviews where reviewer='bbbbbbbb-0000-0000-0000-000000000002'$q$, 'ok');
 
+-- Sundul berbayar (24 jam teratas)
+select pg_temp.uji('Sundul: A posting barang baru', :A, 'a@mail.unpad.ac.id', $q$insert into items (id,owner,campus,title,category,condition,mode,price,cod,photos) values ('11111111-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001','unpad','Rak buku','Perabot Kos','Baik','Sell',40000,0,'{x}')$q$, 'ok');
+select pg_temp.uji('Sundul: barang belum lunas tidak bisa disundul', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path,kind) values ('11111111-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001',2000,'aaaaaaaa-0000-0000-0000-000000000001/s0.jpg','sundul')$q$, 'fail');
+select pg_temp.uji('Sundul: A bayar biaya posting', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path) values ('11111111-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001',2000,'aaaaaaaa-0000-0000-0000-000000000001/p3.jpg')$q$, 'ok');
+select pg_temp.uji('Sundul: admin setujui posting', :Z, 'admin@unpad.ac.id', $q$update payments set status='approved' where item_id='11111111-0000-0000-0000-000000000003' and kind='post'$q$, 'ok');
+select pg_temp.uji('Sundul: A tidak bisa set sundul sendiri', :A, 'a@mail.unpad.ac.id', $q$update items set bumped_until=now()+interval '30 days' where id='11111111-0000-0000-0000-000000000003'$q$, 'fail');
+select pg_temp.uji('Sundul: gratis ditolak saat ada biaya', :A, 'a@mail.unpad.ac.id', $q$select sundul_free('11111111-0000-0000-0000-000000000003')$q$, 'fail');
+select pg_temp.uji('Sundul: B tidak bisa bayar sundul barang A', :B, 'b@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path,kind) values ('11111111-0000-0000-0000-000000000003','bbbbbbbb-0000-0000-0000-000000000002',2000,'bbbbbbbb-0000-0000-0000-000000000002/s.jpg','sundul')$q$, 'fail');
+select pg_temp.uji('Sundul: A kirim bukti sundul', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path,kind) values ('11111111-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001',1,'aaaaaaaa-0000-0000-0000-000000000001/s1.jpg','sundul')$q$, 'ok');
+select pg_temp.uji('Sundul: nominal sundul Rp2.000', :A, 'a@mail.unpad.ac.id', $q$select * from payments where kind='sundul' and amount=2000 and status='pending'$q$, 'rows:1');
+select pg_temp.uji('Sundul: belum naik sebelum disetujui', :B, 'b@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000003' and bumped_until is not null$q$, 'rows:0');
+select pg_temp.uji('Sundul: tidak bisa kirim bukti sundul ganda', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path,kind) values ('11111111-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001',2000,'aaaaaaaa-0000-0000-0000-000000000001/s2.jpg','sundul')$q$, 'fail');
+select pg_temp.uji('Sundul: admin setujui sundul', :Z, 'admin@unpad.ac.id', $q$update payments set status='approved' where item_id='11111111-0000-0000-0000-000000000003' and kind='sundul'$q$, 'ok');
+select pg_temp.uji('Sundul: barang naik 24 jam, terlihat B', :B, 'b@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000003' and pay_status='approved' and bumped_until between now()+interval '23 hours' and now()+interval '25 hours'$q$, 'rows:1');
+select pg_temp.uji('Sundul: tidak bisa sundul lagi saat masih aktif', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path,kind) values ('11111111-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001',2000,'aaaaaaaa-0000-0000-0000-000000000001/s3.jpg','sundul')$q$, 'fail');
+select pg_temp.uji('Sundul: posting baru tidak bisa langsung tersundul', :A, 'a@mail.unpad.ac.id', $q$insert into items (id,owner,campus,title,category,condition,mode,cod,photos,bumped_until) values ('11111111-0000-0000-0000-000000000004','aaaaaaaa-0000-0000-0000-000000000001','unpad','Lampu','Elektronik','Baik','Donate',0,'{x}',now()+interval '9 days')$q$, 'ok');
+select pg_temp.uji('Sundul: kolom sundul posting baru dikosongkan', :A, 'a@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000004' and bumped_until is null$q$, 'rows:1');
+select set_config('reuse.pay_trigger','1',false);
+update public.items set bumped_until = now() - interval '1 hour' where id = '11111111-0000-0000-0000-000000000003';
+select set_config('reuse.pay_trigger','',false);
+update public.settings set value = '0'::jsonb where key = 'sundul_fee';
+select pg_temp.uji('Sundul: B tidak bisa sundul gratis barang A', :B, 'b@mail.unpad.ac.id', $q$select sundul_free('11111111-0000-0000-0000-000000000003')$q$, 'fail');
+select pg_temp.uji('Sundul: biaya 0, A sundul gratis setelah masa habis', :A, 'a@mail.unpad.ac.id', $q$select sundul_free('11111111-0000-0000-0000-000000000003')$q$, 'ok');
+select pg_temp.uji('Sundul: gratis pun hanya sekali per 24 jam', :A, 'a@mail.unpad.ac.id', $q$select sundul_free('11111111-0000-0000-0000-000000000003')$q$, 'fail');
+
+-- Tanda dibaca
+select pg_temp.uji('Dibaca: B tidak bisa ubah waktu baca A langsung', :B, 'b@mail.unpad.ac.id', $q$update conversations set seller_read_at=now()+interval '1 day'$q$, 'fail');
+select pg_temp.uji('Dibaca: B kirim pesan', :B, 'b@mail.unpad.ac.id', $q$insert into messages (conversation_id,sender,body) select id,'bbbbbbbb-0000-0000-0000-000000000002','Halo lagi' from conversations where item_id='11111111-0000-0000-0000-000000000002'$q$, 'ok');
+select pg_temp.uji('Dibaca: A punya 1 pesan belum dibaca', :A, 'a@mail.unpad.ac.id', $q$select * from unread_counts() where n=1$q$, 'rows:1');
+select pg_temp.uji('Dibaca: B sendiri tidak punya belum dibaca', :B, 'b@mail.unpad.ac.id', $q$select * from unread_counts()$q$, 'rows:0');
+select pg_temp.uji('Dibaca: X tidak bisa tandai chat orang lain', :X, 'x@itb.ac.id', $q$select mark_read(id) from conversations$q$, 'rows:0');
+select pg_temp.uji('Dibaca: A tandai dibaca', :A, 'a@mail.unpad.ac.id', $q$select mark_read(id) from conversations where item_id='11111111-0000-0000-0000-000000000002'$q$, 'ok');
+select pg_temp.uji('Dibaca: setelah dibaca, 0 pesan baru', :A, 'a@mail.unpad.ac.id', $q$select * from unread_counts()$q$, 'rows:0');
+select pg_temp.uji('Dibaca: B melihat pesannya sudah dibaca A', :B, 'b@mail.unpad.ac.id', $q$select * from conversations where item_id='11111111-0000-0000-0000-000000000002' and seller_read_at >= last_message_at$q$, 'rows:1');
+
+-- Komplain
+select pg_temp.uji('Komplain: B laporkan barang A', :B, 'b@mail.unpad.ac.id', $q$insert into reports (reporter,target,item_id,reason,detail) values ('bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','11111111-0000-0000-0000-000000000003','Barang tidak sesuai','Foto beda dengan aslinya')$q$, 'ok');
+select pg_temp.uji('Komplain: judul barang ikut tersimpan', :B, 'b@mail.unpad.ac.id', $q$select * from reports where item_title='Rak buku'$q$, 'rows:1');
+select pg_temp.uji('Komplain: tidak bisa lapor ganda saat masih aktif', :B, 'b@mail.unpad.ac.id', $q$insert into reports (reporter,target,item_id,reason) values ('bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','11111111-0000-0000-0000-000000000003','Penipuan')$q$, 'fail');
+select pg_temp.uji('Komplain: tidak bisa lapor diri sendiri', :A, 'a@mail.unpad.ac.id', $q$insert into reports (reporter,target,reason) values ('aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','Lainnya')$q$, 'fail');
+select pg_temp.uji('Komplain: tidak bisa atas nama orang lain', :B, 'b@mail.unpad.ac.id', $q$insert into reports (reporter,target,reason) values ('cccccccc-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001','Lainnya')$q$, 'fail');
+select pg_temp.uji('Komplain: barang harus milik yang dilaporkan', :B, 'b@mail.unpad.ac.id', $q$insert into reports (reporter,target,item_id,reason) values ('bbbbbbbb-0000-0000-0000-000000000002','cccccccc-0000-0000-0000-000000000003','11111111-0000-0000-0000-000000000003','Penipuan')$q$, 'fail');
+select id as cv2 from public.conversations where item_id='11111111-0000-0000-0000-000000000002' \gset
+select pg_temp.uji('Komplain: X tidak bisa pakai chat orang lain', :X, 'x@itb.ac.id', format($q$insert into reports (reporter,target,conversation_id,reason) values ('cccccccc-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001',%L,'Kata-kata kasar')$q$, :'cv2'), 'fail');
+select pg_temp.uji('Komplain: A laporkan B dari chat', :A, 'a@mail.unpad.ac.id', $q$insert into reports (reporter,target,conversation_id,reason) select 'aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002',id,'Tidak datang saat COD' from conversations where item_id='11111111-0000-0000-0000-000000000002'$q$, 'ok');
+select pg_temp.uji('Komplain: alasan di luar daftar ditolak', :X, 'x@itb.ac.id', $q$insert into reports (reporter,target,reason) values ('cccccccc-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001','Iseng')$q$, 'fail');
+select pg_temp.uji('Komplain: terlapor (A) tidak bisa lihat laporan B', :A, 'a@mail.unpad.ac.id', $q$select * from reports where reporter='bbbbbbbb-0000-0000-0000-000000000002'$q$, 'rows:0');
+select pg_temp.uji('Komplain: X tidak bisa lihat laporan', :X, 'x@itb.ac.id', $q$select * from reports$q$, 'rows:0');
+select pg_temp.uji('Komplain: B tidak bisa menutup laporannya sendiri', :B, 'b@mail.unpad.ac.id', $q$update reports set status='resolved'$q$, 'fail');
+select pg_temp.uji('Komplain: admin melihat semua laporan', :Z, 'admin@unpad.ac.id', $q$select * from reports$q$, 'rows:2');
+select pg_temp.uji('Komplain: admin tidak bisa ubah isi laporan', :Z, 'admin@unpad.ac.id', $q$update reports set detail='diubah' where reporter='bbbbbbbb-0000-0000-0000-000000000002'$q$, 'fail');
+select pg_temp.uji('Komplain: admin selesaikan dengan catatan', :Z, 'admin@unpad.ac.id', $q$update reports set status='resolved', admin_note='Barang sudah diperiksa' where reporter='bbbbbbbb-0000-0000-0000-000000000002'$q$, 'ok');
+select pg_temp.uji('Komplain: B melihat jawaban admin', :B, 'b@mail.unpad.ac.id', $q$select * from reports where status='resolved' and admin_note is not null$q$, 'rows:1');
+select pg_temp.uji('Komplain: setelah selesai B bisa lapor lagi', :B, 'b@mail.unpad.ac.id', $q$insert into reports (reporter,target,item_id,reason) values ('bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','11111111-0000-0000-0000-000000000003','Lainnya')$q$, 'ok');
+select pg_temp.uji('Komplain: tidak ada yang bisa hapus laporan', :B, 'b@mail.unpad.ac.id', $q$delete from reports$q$, 'fail');
+
 select no, status, skenario, harap, dapat from hasil order by no;
 select count(*) filter (where status='PASS') as lulus, count(*) as total from hasil;
