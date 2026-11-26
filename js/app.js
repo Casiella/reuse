@@ -32,6 +32,7 @@ up:'<path d="M12 19V5M5 12l7-7 7 7"/>',
 chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
 users:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6M16 4.5a3.5 3.5 0 0 1 0 7M22 20c0-3-2-5.2-5-5.8"/>',
 qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4"/>',
+star:'<path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.3l-5.9 3.1 1.3-6.5L2.5 9.3l6.6-.8z"/>',
 trash:'<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
 };
 const svg=(n,c='i')=>`<svg class="${c}" viewBox="0 0 24 24">${IC[n]||''}</svg>`;
@@ -50,7 +51,7 @@ const OTPN=+CFG.OTP_LENGTH||6;
 const BUCKET='item-photos';
 const ITEM_SEL='*, profiles!items_owner_fkey(name)';
 const PROF_COLS='id,name,campus,created_at';
-const CONV_SEL='*, items(id,title,photos,mode,price,wish,cod,cod_place,campus,status), buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name)';
+const CONV_SEL='*, items(id,title,photos,mode,price,wish,cod,cod_place,campus,status,owner,taken_by), buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name)';
 function errMsg(e){const m=String(e?.message||e||'');
   if(/rate limit|too many|security purposes/i.test(m))return 'Terlalu sering meminta kode. Tunggu sebentar lalu coba lagi.';
   if(/expired|invalid.*(otp|token)|token.*(expired|invalid)/i.test(m))return 'Kode salah atau sudah kedaluwarsa.';
@@ -372,7 +373,7 @@ async function renderDetail(id){const el=$('#detail');
    <div class="dpr">${i.m==='Sell'?rp(i.p):i.m==='Swap'?'Tukar barang':'Gratis'}</div>
    ${i.m==='Swap'?`<div style="font-size:13px;color:var(--mut);margin-top:2px">Ingin ditukar dengan: <b style="color:var(--swap)">${esc(i.w)}</b></div>`:''}
    <div style="font-size:11.5px;color:var(--mut);margin-top:6px">Diposting ${ago(i.ts)} lalu</div>
-   <div class="box"><div class="seller"><div class="av">${esc(i.by[0])}</div><div><b>${esc(i.by)}${i.mine?' (kamu)':''} <span class="vb">${VB}</span></b><small>${c.s}</small></div></div>
+   <div class="box"><div class="seller"><div class="av">${esc(i.by[0])}</div><div style="flex:1"><b>${esc(i.by)}${i.mine?' (kamu)':''} <span class="vb">${VB}</span></b><small>${c.s}</small></div><button class="rate" id="dRate" data-seller="${i.owner}" data-name="${esc(i.by)}" ${i.sample?'hidden':''}></button></div>
     <div class="verif">${VB}<span><b>Mahasiswa terverifikasi</b><br>Email kampus @${esc(c.dom)} sudah dikonfirmasi lewat OTP.</span></div></div>
    <div class="box"><h3>Titik COD</h3><div class="codrow"><div class="ic">${svg('pin')}</div><div><b>${esc(codName(i))}</b><span>${c.n} · ${c.loc}</span></div></div></div>
    ${i.d?`<div class="box"><h3>Deskripsi</h3><p>${esc(i.d)}</p></div>`:''}
@@ -382,6 +383,7 @@ async function renderDetail(id){const el=$('#detail');
     :i.mine?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang">${svg('trash')}</button>`+(i.status==='done'
         ?`<button class="btn ghost" id="dReopen">Tersedia lagi</button><button class="btn" data-tab="profile">${svg('chart')}Lihat dampak</button>`
         :`<button class="btn ghost sundul" id="dSundul">${svg('up')}Sundul</button><button class="btn" id="dDone">${svg('check')}Tandai selesai</button>`)
+    :i.status==='done'&&i.takenBy===S.uid?`<button class="btn" id="dReview">${svg('star')}Beri rating penjual</button>`
     :i.status==='done'?`<button class="btn" disabled>Barang sudah selesai</button>`
     :`${S.admin?`<button class="btn ghost sq" id="dDel" aria-label="Hapus barang (admin)">${svg('trash')}</button>`:''}<button class="btn" id="dChat">${svg('chat')}Chat pemilik</button>`}</div>`;
   $('#dBack').onclick=()=>go(prev.s,prev.o);
@@ -397,6 +399,8 @@ async function renderDetail(id){const el=$('#detail');
       delete S.cache[i.id];closeModal();toast('Barang dihapus');go('home')}};
   $('#dShare').onclick=async()=>{const url=location.origin+'/';const text=`${i.t} · ${i.m==='Sell'?rp(i.p):i.m==='Swap'?'Tukar':'Gratis'} di ReUse (${c.s})`;
     try{if(navigator.share){await navigator.share({title:i.t,text,url});return}await navigator.clipboard.writeText(text+' '+url);toast('Info barang disalin')}catch(_){}};
+  if(!i.sample)loadRateBtn($('#dRate'),i.owner);
+  if($('#dReview'))myReview(i.id).then(r=>{const b=$('#dReview');if(!b)return;if(r)b.innerHTML=svg('star')+'Ubah rating ('+r.stars+'★)';b.onclick=()=>rateModal({id:i.id,t:i.t,owner:i.owner,by:i.by},r)});
   const trk=$('#trk');trk.onscroll=()=>{$('#cnt').textContent=(Math.round(trk.scrollLeft/trk.clientWidth)+1)+'/'+i.img.length};}
 
 /* ---------- PBI-10 · Tandai selesai + ringkasan dampak ---------- */
@@ -539,6 +543,44 @@ function shrinkTo(file,max){return new Promise((res,rej)=>{const u=URL.createObj
   cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(u);cv.toBlob(b=>b?res({blob:b,url:URL.createObjectURL(b)}):rej(),'image/jpeg',.85)};im.src=u})}
 $('#payBack').onclick=()=>payItem?go('detail',{id:payItem}):go('profile');
 
+/* ---------- Rating penjual ---------- */
+const fmtStar=n=>Number(n).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1});
+const starRow=n=>`<span class="stars">${[1,2,3,4,5].map(k=>`<i class="${n>=k-.25?'on':n>=k-.75?'half':''}">${svg('star')}</i>`).join('')}</span>`;
+async function sellerRating(uid){const {data}=await sb.from('seller_ratings').select('avg_stars,total').eq('seller',uid).maybeSingle();return data}
+async function myReview(itemId){const {data}=await sb.from('reviews').select('*').eq('item_id',itemId).eq('reviewer',S.uid).maybeSingle();return data}
+async function toRate(){const [{data:got},{data:mine}]=await Promise.all([
+  sb.from('items').select('id,title,photos,owner,profiles!items_owner_fkey(name)').eq('taken_by',S.uid).eq('status','done').order('done_at',{ascending:false}),
+  sb.from('reviews').select('item_id').eq('reviewer',S.uid)]);
+  const done=new Set((mine||[]).map(r=>r.item_id));return (got||[]).filter(x=>!done.has(x.id)&&x.owner!==S.uid)}
+async function loadRateBtn(b,uid){if(!b)return;const r=await sellerRating(uid);if(!b.isConnected)return;
+  b.innerHTML=r&&r.total?`${svg('star')}<b>${fmtStar(r.avg_stars)}</b><small>${r.total} ulasan</small>`:`<small>Belum ada ulasan</small>`;
+  b.disabled=!(r&&r.total);b.onclick=()=>reviewsModal(uid,b.dataset.name)}
+async function reviewsModal(uid,name){modal(`<h2>Ulasan untuk ${esc(name||'penjual')}</h2><p>Memuat…</p>`);
+  const [r,{data}]=await Promise.all([sellerRating(uid),sb.from('reviews').select('*, items(title), rv:profiles!reviews_reviewer_fkey(name)').eq('seller',uid).order('created_at',{ascending:false}).limit(50)]);
+  modal(`<h2>Ulasan untuk ${esc(name||'penjual')}</h2>
+   ${r&&r.total?`<div class="rsum"><b>${fmtStar(r.avg_stars)}</b>${starRow(r.avg_stars)}<span>${r.total} ulasan</span></div>`:''}
+   <div class="rlist">${(data||[]).map(v=>`<div class="rv" data-rv="${v.id}"><div class="rvh">${starRow(v.stars)}<small>${esc(v.rv?.name||'Pembeli')} · ${ago(Date.parse(v.created_at))} lalu</small>${S.admin||v.reviewer===S.uid?`<button class="adel" data-rvdel="${v.id}" aria-label="Hapus ulasan">${svg('trash')}</button>`:''}</div>
+     ${v.comment?`<p>${esc(v.comment)}</p>`:''}<small class="rvi">Barang: ${esc(v.items?.title||'dihapus')}</small></div>`).join('')||'<p class="muted">Belum ada ulasan.</p>'}</div>
+   <button class="btn" data-close>Tutup</button>`);
+  $('#modal').onclick=async e=>{const d=e.target.closest('[data-rvdel]');if(!d)return;if(!confirm('Hapus ulasan ini?'))return;
+    const {error}=await sb.from('reviews').delete().eq('id',d.dataset.rvdel);if(error){toast(errMsg(error));return}toast('Ulasan dihapus');reviewsModal(uid,name)}}
+function rateModal(it,existing){let st=existing?.stars||0;
+  modal(`<div class="mi" data-ic="star"></div><h2>Beri rating ${esc(it.by||'penjual')}</h2><p>Untuk “${esc(it.t)}”. Rating membantu mahasiswa lain memilih penjual yang terpercaya.</p>
+   <div class="starpick" id="spk">${[1,2,3,4,5].map(k=>`<button type="button" data-k="${k}" aria-label="${k} bintang">${svg('star')}</button>`).join('')}</div>
+   <div class="stl" id="stl"></div>
+   <textarea class="field" id="rvC" rows="3" maxlength="300" placeholder="Ceritakan pengalamanmu (opsional)">${esc(existing?.comment||'')}</textarea>
+   <div class="err" id="rvE"></div>
+   <div class="row2"><button class="btn ghost" data-close>Nanti</button><button class="btn" id="rvOk">Kirim rating</button></div>`);
+  const LBL=['','Buruk','Kurang','Cukup','Baik','Sangat baik'];
+  const draw=()=>{[...$('#spk').children].forEach((b,k)=>b.classList.toggle('on',k<st));$('#stl').textContent=st?LBL[st]:'Ketuk bintang'};draw();
+  $('#spk').onclick=e=>{const b=e.target.closest('[data-k]');if(b){st=+b.dataset.k;$('#rvE').textContent='';draw()}};
+  $('#rvOk').onclick=async()=>{if(!st){$('#rvE').textContent='Pilih jumlah bintang dulu.';return}
+    $('#rvOk').disabled=true;const comment=$('#rvC').value.trim()||null;
+    const {error}=existing?await sb.from('reviews').update({stars:st,comment}).eq('id',existing.id)
+      :await sb.from('reviews').insert({item_id:it.id,seller:it.owner,reviewer:S.uid,stars:st,comment});
+    if(error){$('#rvE').textContent=errMsg(error);$('#rvOk').disabled=false;return}
+    closeModal();toast('Terima kasih! Rating terkirim.');if(cur==='profile')renderProfile();else if(cur==='detail')renderDetail(it.id);else if(cur==='chat')$('#chRate').hidden=true}}
+
 /* ---------- PBI-08 · Chat realtime + 3 template pesan ---------- */
 async function openChatFor(i){const B=$('#dChat');if(B)B.disabled=true;
   try{
@@ -590,6 +632,9 @@ async function renderChat(id){curConv=id;seenMsg=new Set();lastDay='';
   $('#msgs').innerHTML=feed.length?'':`<div class="chempty">Mulai obrolan dengan ${esc(otherName(cv)||'pemilik')}.<br>Pakai template di bawah, atau ketuk ikon kalender untuk mengatur COD.</div>`;
   feed.forEach(x=>x._t==='m'?appendMsg(x):putDeal(x));
   $('#chCod').hidden=!it.id||it.status==='done';
+  $('#chRate').hidden=true;
+  if(it.status==='done'&&it.taken_by===S.uid)myReview(it.id).then(r=>{if(curConv!==id||r)return;const b=$('#chRate');b.hidden=false;
+    b.onclick=()=>rateModal({id:it.id,t:it.title,owner:it.owner,by:otherName(cv)},null)});
   $('#tpls').innerHTML=templates(cv).map(t=>`<button type="button">${esc(t)}</button>`).join('');
 }
 $('#tpls').onclick=e=>{const b=e.target.closest('button');if(b){sendMsg(b.textContent);$('#tpls').scrollTo({left:0,behavior:'smooth'})}};
@@ -617,6 +662,11 @@ function startRealtime(){if(channel)return;
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'deals'},({new:d})=>onDeal(d,false))
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'payments'},({new:p})=>{if(!S.admin||p.owner===S.uid)return;
      refreshPending();toast('Bukti bayar baru masuk. Buka Profil → Panel admin.');if(cur==='admin'&&admTab==='bayar')renderAdmin()})
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'items'},({new:r,old:o})=>{
+     if(r.taken_by===S.uid&&r.status==='done'&&r.owner!==S.uid){delete S.cache[r.id];$('#pfDot').hidden=false;
+       toast(`“${r.title}” sudah jadi milikmu. Beri rating penjual di Profil.`);if(cur==='profile')renderProfile()}})
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'reviews'},({new:v})=>{if(v.seller!==S.uid)return;
+     toast(`Kamu dapat rating ${v.stars}★ dari pembeli`);if(cur==='profile')renderProfile()})
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'payments'},({new:p})=>{if(S.admin)refreshPending();if(p.owner!==S.uid)return;
      delete S.cache[p.item_id];toast(p.status==='approved'?'Pembayaran disetujui. Barangmu sudah tampil!':'Pembayaran ditolak'+(p.note?': '+p.note:''));
      if(cur==='pay'&&payItem===p.item_id)renderPay(p.item_id);else if(cur==='profile')renderProfile();})
@@ -632,7 +682,12 @@ async function renderProfile(){const c=myCampus();$('#pfAv').textContent=S.me.na
   $('#pfE').textContent=S.email;$('#pfV').innerHTML=VB+`<span><b>Terverifikasi via ${PWMODE?'email kampus':'OTP'}</b><br>Lencana ini tampil di setiap barang yang kamu posting.</span>`;
   $('#pfC').textContent=c.s;$('#adminBtn').hidden=!S.admin;
   $('#pfStats').innerHTML=skel(3);$('#pfItems').innerHTML='';
-  const d=await myImpact();if(cur!=='profile')return;
+  const [d,rt,todo]=await Promise.all([myImpact(),sellerRating(S.uid),toRate()]);if(cur!=='profile')return;
+  $('#pfRate').innerHTML=rt&&rt.total?`${starRow(rt.avg_stars)}<b>${fmtStar(rt.avg_stars)}</b><span>dari ${rt.total} ulasan pembeli</span>${svg('right')}`:`${starRow(0)}<span>Belum ada rating sebagai penjual</span>`;
+  $('#pfRate').onclick=()=>rt&&rt.total&&reviewsModal(S.uid,S.me.name);
+  $('#pfTodo').hidden=!todo.length;
+  $('#pfTodo').innerHTML=todo.length?`<h3>Beri rating</h3>`+todo.map(x=>`<div class="myi"><img src="${esc(x.photos?.[0]||'')}" alt=""><span><b>${esc(x.title)}</b><small>dari ${esc(x.profiles?.name||'penjual')}</small></span><button class="btn sm" data-rate="${x.id}">${svg('star')}Nilai</button></div>`).join(''):'';
+  $('#pfTodo').onclick=e=>{const b=e.target.closest('[data-rate]');if(!b)return;const x=todo.find(t=>t.id===b.dataset.rate);rateModal({id:x.id,t:x.title,owner:x.owner,by:x.profiles?.name},null)};
   $('#pfStats').innerHTML=[['Diposting',d.posted],['Selesai',d.done],['Didapat',d.got],['COD disepakati',d.deals]].map(([l,n])=>`<div><b>${n}</b><small>${l}</small></div>`).join('');
   const lines=impactText(d);
   $('#pfImpact').innerHTML=lines.length?lines.map(l=>`<div>${svg('check')}<span>${l}</span></div>`).join(''):'<p>Belum ada barang yang selesai. Tandai barangmu “selesai” setelah berpindah tangan untuk melihat dampaknya di sini.</p>';

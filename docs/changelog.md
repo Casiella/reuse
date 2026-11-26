@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-26 · Rating penjual
+- Tabel `reviews` + view `seller_ratings` (migrasi 010). Hanya pembeli yang dipilih saat "Tandai selesai" yang bisa memberi 1–5 bintang + ulasan, sekali per barang (bisa diubah).
+- Rating tampil di halaman barang (ketuk untuk lihat semua ulasan) dan di Profil penjual.
+- Pembeli diingatkan lewat notifikasi, bagian "Beri rating" di Profil, tombol di halaman barang, dan banner di chat.
+- Admin dan penulis bisa menghapus ulasan. Uji RLS: 79 skenario.
+
 ## 2026-11-25 · Perbaikan
 - Perbaikan: jika akun berganti di tab lain, tab ini ikut memuat ulang (sebelumnya "Tandai selesai" & "Terima COD" gagal karena memakai akun dari tab lain).
 - Pesan error teknis diganti kalimat yang jelas.

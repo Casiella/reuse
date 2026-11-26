@@ -121,5 +121,20 @@ select pg_temp.uji('Bayar: A tidak bisa ubah biaya posting', :A, 'a@mail.unpad.a
 select pg_temp.uji('Bayar: admin ubah gambar QRIS', :Z, 'admin@unpad.ac.id', $q$update settings set value='"https://x/qris.png"'::jsonb where key='qris_url'$q$, 'ok');
 select pg_temp.uji('Bayar: posting admin langsung tampil', :Z, 'admin@unpad.ac.id', $q$insert into items (owner,campus,title,category,condition,mode,cod,photos) values ('eeeeeeee-0000-0000-0000-000000000005','unpad','Info admin','Lainnya','Baik','Donate',0,'{x}') returning pay_status$q$, 'ok');
 
+-- Rating penjual
+select pg_temp.uji('Rating: B (penerima) belum bisa rating sebelum selesai', :B, 'b@mail.unpad.ac.id', $q$insert into reviews (item_id,seller,reviewer,stars) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002',5)$q$, 'fail');
+select pg_temp.uji('Rating: B mulai chat barang kedua', :B, 'b@mail.unpad.ac.id', $q$insert into conversations (item_id,buyer_id,seller_id) values ('11111111-0000-0000-0000-000000000002','bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001')$q$, 'ok');
+select pg_temp.uji('Rating: A tandai selesai ke B', :A, 'a@mail.unpad.ac.id', $q$update items set status='done', taken_by='bbbbbbbb-0000-0000-0000-000000000002' where id='11111111-0000-0000-0000-000000000002'$q$, 'ok');
+select pg_temp.uji('Rating: X (bukan penerima) tidak bisa rating', :X, 'x@itb.ac.id', $q$insert into reviews (item_id,seller,reviewer,stars) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','cccccccc-0000-0000-0000-000000000003',1)$q$, 'fail');
+select pg_temp.uji('Rating: A tidak bisa rating diri sendiri', :A, 'a@mail.unpad.ac.id', $q$insert into reviews (item_id,seller,reviewer,stars) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001',5)$q$, 'fail');
+select pg_temp.uji('Rating: B tidak bisa atas nama orang lain', :B, 'b@mail.unpad.ac.id', $q$insert into reviews (item_id,seller,reviewer,stars) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','cccccccc-0000-0000-0000-000000000003',5)$q$, 'fail');
+select pg_temp.uji('Rating: bintang di luar 1-5 ditolak', :B, 'b@mail.unpad.ac.id', $q$insert into reviews (item_id,seller,reviewer,stars) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002',6)$q$, 'fail');
+select pg_temp.uji('Rating: B beri 5 bintang', :B, 'b@mail.unpad.ac.id', $q$insert into reviews (item_id,seller,reviewer,stars,comment) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002',5,'Ramah, barang sesuai')$q$, 'ok');
+select pg_temp.uji('Rating: tidak bisa rating dua kali', :B, 'b@mail.unpad.ac.id', $q$insert into reviews (item_id,seller,reviewer,stars) values ('11111111-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002',1)$q$, 'fail');
+select pg_temp.uji('Rating: A (penjual) tidak bisa ubah ulasan B', :A, 'a@mail.unpad.ac.id', $q$update reviews set stars=1$q$, 'fail');
+select pg_temp.uji('Rating: B ubah bintang sendiri', :B, 'b@mail.unpad.ac.id', $q$update reviews set stars=4 where reviewer='bbbbbbbb-0000-0000-0000-000000000002'$q$, 'ok');
+select pg_temp.uji('Rating: rata-rata penjual terbaca', :X, 'x@itb.ac.id', $q$select * from seller_ratings where seller='aaaaaaaa-0000-0000-0000-000000000001' and avg_stars=4 and total=1$q$, 'rows:1');
+select pg_temp.uji('Rating: admin hapus ulasan', :Z, 'admin@unpad.ac.id', $q$delete from reviews where reviewer='bbbbbbbb-0000-0000-0000-000000000002'$q$, 'ok');
+
 select no, status, skenario, harap, dapat from hasil order by no;
 select count(*) filter (where status='PASS') as lulus, count(*) as total from hasil;
