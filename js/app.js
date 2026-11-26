@@ -8,6 +8,7 @@ laptop:'<rect x="4" y="4" width="16" height="11" rx="2"/><path d="M2 20h20"/>',
 mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
 left:'<path d="m15 18-6-6 6-6"/>',right:'<path d="m9 18 6-6-6-6"/>',
 pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+headset:'<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13" width="4" height="7" rx="2"/><rect x="17" y="13" width="4" height="7" rx="2"/><path d="M19 20a3 3 0 0 1-3 3h-3"/>',
 flag:'<path d="M4 22V4a1 1 0 0 1 1-1h12l-2 4 2 4H5"/>',
 search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
 lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
@@ -129,7 +130,7 @@ function go(id,opts={}){
   if(S.me&&['onb','email','otp'].includes(id))id='home';
   document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
   cur=id;window.scrollTo(0,0);if(id!=='chat')curConv=null;
-  $('#nav').hidden=!['home','search','chats','profile'].includes(id);
+  $('#nav').hidden=!['home','search','chats','profile'].includes(id);window.csSync&&csSync(id);
   document.querySelectorAll('#nav [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
   ({pay:()=>renderPay(opts.id,opts.kind),admin:renderAdmin,email:loadShowcase,onb:renderOnb,otp:startOtp,campus:renderCampus,home:renderHome,search:renderSearch,chats:renderChats,chat:()=>renderChat(opts.id),
     post:resetPost,profile:renderProfile,detail:()=>renderDetail(opts.id)}[id]||(()=>{}))();
@@ -937,6 +938,111 @@ async function admSundul(B){const now=new Date().toISOString();
   B.onclick=e=>{const b=e.target.closest('[data-id]');if(b)go('detail',{id:b.dataset.id})};}
 $('#logout').onclick=async()=>{if(channel){sb.removeChannel(channel);channel=null}await sb.auth.signOut();S.admin=false;
   S=fresh();$('#emailI').value='';$('#pwI').value='';$('#cList').innerHTML='';$('#nDot').hidden=true;go('onb')};
+
+/* ---------- Customer service (bot FAQ, tanpa server) ---------- */
+{
+const rpx=n=>n?rp(n):'gratis';
+const camp=()=>myCampus?.()||{cod:[],s:'kampusmu'};
+// Setiap topik: kata kunci (bobot), jawaban (HTML, boleh fungsi), tombol aksi, saran lanjutan
+const KB=[
+ {id:'sapa',k:['halo','hai','hi','hallo','helo','pagi','siang','sore','malam','permisi','assalamualaikum','hei','hey','p'],exact:true,
+  a:()=>`Halo${S.me?.name?', '+esc(S.me.name.split(' ')[0]):''}! 👋 Ada yang bisa aku bantu soal ReUse?`,s:['Cara posting','Biaya & bayar','Apa itu Sundul?','Cara COD aman']},
+ {id:'makasih',k:['makasih','terima kasih','terimakasih','thanks','thank','tq','thx','mksh','oke makasih','sip'],
+  a:'Sama-sama! Semoga barangnya cepat dapat pemilik baru 🌱 Kalau ada yang bingung lagi, tinggal tanya.'},
+ {id:'posting',k:['posting','post','jual','upload','unggah','pasang','iklan','tambah barang','masukin barang','naruh barang','menjual'],
+  a:()=>`Cara memposting barang:<ol><li>Ketuk tombol <b>+</b> di tengah menu bawah.</li><li>Tambah foto (maks. 5), isi judul, kategori, dan kondisi.</li><li>Pilih mode: <b>Sell</b> (jual), <b>Swap</b> (tukar), atau <b>Donate</b> (gratis).</li><li>Pilih titik COD, lalu ketuk <b>Posting</b>.</li></ol>${FEE?`Biaya posting ${rpx(FEE)}, dibayar lewat QRIS${PAY_AUTO?' dan langsung aktif setelah kamu menekan “Saya sudah bayar”':''}.`:'Posting saat ini gratis.'}`,
+  act:[['Posting sekarang','post']],s:['Biaya & bayar','Mode Sell, Swap, Donate']},
+ {id:'biaya',k:['biaya','bayar','pembayaran','qris','fee','2000','2rb','2 ribu','dua ribu','tarif','mahal','harga posting','scan','transfer','bukti bayar','gratis ga'],
+  a:()=>`Biaya di ReUse:<ul><li>Posting barang: <b>${rpx(FEE)}</b></li><li>Sundul 24 jam: <b>${rpx(SFEE)}</b></li></ul>Bayar dengan scan QRIS, nominalnya sudah terisi otomatis. ${PAY_AUTO?'Setelah bayar, ketuk <b>Saya sudah bayar</b> dan barangmu langsung aktif.':'Setelah bayar, upload screenshot bukti lalu tunggu admin menyetujui.'}${QRIS_DEMO?'<br><small>Saat ini masih QRIS demo, jadi tidak ada uang sungguhan yang ditarik.</small>':''}<br>Chat, COD, dan rating tidak dipungut biaya.`,
+  s:['Apa itu Sundul?','Cara posting']},
+ {id:'sundul',k:['sundul','naik','ke atas','paling atas','boost','promosi','biar laku','biar dilihat','biar rame','sepi peminat','iklan atas'],
+  a:()=>`<b>Sundul</b> menaikkan barangmu ke urutan paling atas beranda kampus selama <b>24 jam</b>, dengan lencana oranye “Disundul”.<ol><li>Buka barangmu dari <b>Profil → Barangku</b>.</li><li>Ketuk <b>Sundul</b>, lalu bayar ${rpx(SFEE)}.</li></ol>Setelah 24 jam barang kembali ke urutan biasa dan bisa disundul lagi.`,
+  act:[['Buka Profil','profile']],s:['Biaya & bayar','Tips biar cepat laku']},
+ {id:'laku',k:['cepat laku','tips jual','gak laku','ga laku','tidak laku','biar cepet','sepi'],
+  a:'Tips biar barang cepat laku:<ul><li>Pakai foto terang dari beberapa sisi.</li><li>Tulis kondisi jujur, termasuk minusnya.</li><li>Pasang harga wajar, cek barang serupa di beranda.</li><li>Balas chat secepatnya. Pembeli bisa lihat apakah pesannya sudah kamu baca.</li><li>Pakai <b>Sundul</b> supaya tampil paling atas 24 jam.</li></ul>',s:['Apa itu Sundul?']},
+ {id:'mode',k:['mode','swap','tukar','tuker','tukeran','barter','donate','donasi','gratisan','kasih gratis','sell'],
+  a:'Ada tiga mode:<ul><li><b>Sell</b>: dijual dengan harga.</li><li><b>Swap</b>: ditukar dengan barang lain. Tulis barang yang kamu cari.</li><li><b>Donate</b>: diberikan gratis.</li></ul>Pilih mode saat memposting. Di beranda, kamu juga bisa memfilter barang berdasarkan mode.',s:['Cara posting','Cara mencari barang']},
+ {id:'aman',k:['aman','keamanan','tips cod','penipuan cara','hati hati','hati-hati','takut','waspada','safe','resiko','risiko'],
+  a:'Tips COD aman:<ul><li>Ketemu di titik COD yang ramai, siang hari kalau bisa.</li><li>Cek barang dulu sebelum membayar.</li><li>Jangan transfer uang sebelum ketemu.</li><li>Semua pengguna sudah diverifikasi email kampus, cek lencana centang hijau di namanya.</li><li>Kalau ada yang mencurigakan, ketuk ikon <b>bendera</b> untuk komplain.</li></ul>',s:['Lapor penipuan']},
+ {id:'cod',k:['cod','ketemu','ketemuan','titik','lokasi','tempat','janjian','ambil barang','serah terima','meet','jadwal'],
+  a:()=>{const c=camp();return `Transaksi di ReUse dilakukan lewat <b>COD</b> di titik aman sekitar kampus.<ol><li>Di chat, ketuk ikon <b>kalender</b> untuk mengajak COD (tanggal, jam, tempat).</li><li>Lawan bicara menekan <b>Terima</b>, lalu kartu COD berubah menjadi “Disepakati”.</li><li>Setelah barang berpindah tangan, penjual menekan <b>Tandai selesai</b>.</li></ol>${c.cod?.length?`Titik COD di ${esc(c.s)}: ${c.cod.map(esc).join(', ')}.`:''}`},
+  s:['Cara COD aman','Tandai selesai']},
+ {id:'chat',k:['chat','pesan','hubungi','kontak','nego','tawar','nawar','menawar','centang','dibaca','read','balas','whatsapp'],
+  a:'Untuk menghubungi pemilik barang, buka barangnya lalu ketuk <b>Chat pemilik</b>. Ada template pesan cepat juga.<br>Arti tanda di chat: ✓ abu-abu berarti terkirim, ✓✓ hijau berarti sudah dibaca. Chat yang belum kamu baca ditandai angka di menu <b>Chat</b>.',
+  act:[['Buka Chat','chats']],s:['Cara COD aman']},
+ {id:'selesai',k:['selesai','terjual','laku','sold','tandai','sudah dijual','udah laku','kasih ke','stok habis','tersedia lagi'],
+  a:'Setelah barang berpindah tangan, buka barangmu lalu ketuk <b>Tandai selesai</b> dan pilih pembelinya (orang yang pernah chat soal barang itu). Barang hilang dari beranda, pembeli bisa memberi rating, dan dampakmu tercatat di Profil.<br>Kalau batal, ketuk <b>Tersedia lagi</b>.',s:['Rating penjual']},
+ {id:'rating',k:['rating','ulasan','bintang','review','nilai','reputasi','testimoni'],
+  a:'Rating hanya bisa diberikan oleh pembeli yang dipilih saat penjual menekan <b>Tandai selesai</b>, sekali per barang (bisa diubah). Tombolnya muncul di Profil → <b>Beri rating</b>, di halaman barang, dan di chat.<br>Rating penjual tampil di samping namanya di halaman barang.',s:['Tandai selesai']},
+ {id:'komplain',k:['komplain','lapor','laporkan','report','penipu','penipuan','tipu','nipu','scam','kasar','tidak datang','ga datang','gak datang','barang beda','tidak sesuai','kecewa','dirugikan','masalah'],
+  a:'Untuk komplain, ketuk ikon <b>bendera</b> 🏳:<ul><li>di pojok kanan atas halaman barang, atau</li><li>di pojok kanan atas chat.</li></ul>Pilih masalahnya, ceritakan singkat, lalu kirim. Hanya admin yang membaca komplainmu, dan terlapor tidak tahu siapa pelapornya. Status dan jawaban admin muncul di <b>Profil → Komplain saya</b>.',
+  act:[['Lihat Profil','profile']],s:['Cara COD aman']},
+ {id:'hapus',k:['hapus','delete','edit','ubah barang','ganti foto','ganti harga','salah posting','tarik barang','batalkan posting'],
+  a:'Buka barangmu dari <b>Profil → Barangku</b>, lalu ketuk ikon <b>tempat sampah</b> untuk menghapusnya. Saat ini barang belum bisa diedit, jadi kalau ada yang salah (harga, foto, deskripsi), hapus lalu posting ulang.',act:[['Buka Profil','profile']]},
+ {id:'muncul',k:['tidak muncul','ga muncul','gak muncul','nggak muncul','belum muncul','belum tampil','tidak tampil','ga tampil','gak tampil','hilang','ilang','ga ada di beranda'],
+  a:()=>`Kalau barangmu tidak muncul di beranda, kemungkinan penyebabnya:<ul><li><b>Biaya posting belum dibayar.</b> Buka barangnya dari Profil → Barangku. Kalau ada tulisan “Belum tampil”, selesaikan pembayaran ${rpx(FEE)}.</li><li><b>Sudah ditandai selesai.</b> Ketuk <b>Tersedia lagi</b> kalau batal.</li><li><b>Filter beranda</b> masih memilih kampus, area, atau mode lain.</li><li>Barang dihapus admin karena melanggar aturan.</li></ul>`,
+  act:[['Cek Barangku','profile']]},
+ {id:'cari',k:['cari','search','filter','kategori','temukan','nyari','area kos','kos'],
+  a:'Ketuk <b>Cari</b> di menu bawah untuk mencari berdasarkan kata kunci dan kategori. Di beranda, ketuk ikon filter untuk memilih kampus, area kos, dan mode (Sell/Swap/Donate).',act:[['Cari barang','search']]},
+ {id:'akun',k:['akun','login','masuk','daftar','register','password','sandi','lupa','email','verifikasi','otp','logout','keluar'],
+  a:'Akun ReUse memakai <b>email kampus</b> (berakhiran .ac.id) supaya semua pengguna mahasiswa terverifikasi. Kamu tetap masuk di perangkat ini sampai menekan <b>Keluar</b> di Profil.<br>Kalau lupa kata sandi atau email kampusmu bermasalah, kirim komplain kategori <b>Lainnya</b> supaya admin bisa membantu.',s:['Ganti nama']},
+ {id:'nama',k:['ganti nama','ubah nama','nama profil','nama saya'],
+  a:'Buka <b>Profil → Ubah nama</b>. Nama ini tampil di barang dan chat kamu.',act:[['Buka Profil','profile']]},
+ {id:'kampus',k:['kampus','universitas','pindah kampus','ganti kampus','kampus lain','unpad','itb'],
+  a:()=>`Kampusmu: <b>${esc(camp().s||'-')}</b>. Kampus mengikuti email kampus saat mendaftar, jadi tidak bisa diganti sendiri. Kamu tetap bisa melihat barang di kampus lain lewat filter di beranda.`},
+ {id:'dampak',k:['dampak','impact','lingkungan','sampah','eco','hemat'],
+  a:'Setiap barang yang ditandai selesai tercatat sebagai barang yang “diselamatkan” dari tempat sampah. Lihat jumlahnya di <b>Profil → Dampakmu</b>.',act:[['Lihat dampak','profile']]},
+ {id:'admin',k:['admin','manusia','orang asli','cs asli','operator','bicara dengan','telepon','nomor'],
+  a:'Aku bot, jadi jawabanku otomatis 🙂 Untuk masalah yang perlu ditangani admin (penipuan, akun, pembayaran), kirim lewat <b>komplain</b> (ikon bendera di barang atau chat). Admin akan membalas dan statusnya muncul di Profil.',s:['Lapor penipuan']},
+ {id:'bot',k:['kamu siapa','siapa kamu','bot','robot'],
+  a:'Aku bot Customer Service ReUse. Aku bisa menjelaskan cara posting, bayar, Sundul, COD, rating, dan komplain. Tanya saja!',s:['Cara posting','Biaya & bayar']},
+];
+const CHIP={'Cara posting':'posting','Biaya & bayar':'biaya','Apa itu Sundul?':'sundul','Cara COD aman':'aman','Lapor penipuan':'komplain','Mode Sell, Swap, Donate':'mode',
+  'Tandai selesai':'selesai','Rating penjual':'rating','Cara mencari barang':'cari','Ganti nama':'nama','Tips biar cepat laku':'laku'};
+const START=['Cara posting','Biaya & bayar','Apa itu Sundul?','Cara COD aman','Lapor penipuan'];
+const norm=t=>' '+t.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()+' ';
+function match(text){const t=norm(text);let best=null,score=0;
+  for(const e of KB){let sc=0;
+    for(const k of e.k){const kk=norm(k),w=kk.trim().split(' ').length;
+      if(e.exact&&kk.trim().length<=2){if(t===kk)sc+=3}else if(t.includes(kk))sc+=w+1.2;else if(kk.trim().length>=3&&t.includes(kk.slice(0,-1)))sc+=w+.8}
+    if(e.exact&&sc&&t.trim().split(' ').length>3)sc=0.5;
+    if(sc>score){score=sc;best=e}}
+  return score>=1?best:null}
+
+let open=false,booted=false;
+const box=()=>document.getElementById('csBody');
+function add(html,who){const b=box();b.insertAdjacentHTML('beforeend',`<div class="csm ${who}">${html}</div>`);b.scrollTop=b.scrollHeight}
+function chips(list){document.getElementById('csChips').innerHTML=(list||[]).map(c=>`<button type="button">${esc(c)}</button>`).join('')}
+function reply(e,fromChip){const b=box();
+  b.insertAdjacentHTML('beforeend','<div class="csm bot typing"><i></i><i></i><i></i></div>');b.scrollTop=b.scrollHeight;
+  setTimeout(()=>{b.querySelector('.typing')?.remove();
+    if(!e){add('Maaf, aku belum paham pertanyaannya 🙏 Coba pakai kata lain, atau pilih topik di bawah. Kalau masalahnya perlu admin, kirim <b>komplain</b> lewat ikon bendera.','bot');chips(START);return}
+    const a=typeof e.a==='function'?e.a():e.a;
+    add(a+(e.act?`<div class="csact">${e.act.map(([l,t])=>`<button type="button" data-go-tab="${t}">${esc(l)}</button>`).join('')}</div>`:''),'bot');
+    chips(e.s||START)},fromChip?350:600)}
+function ask(text,fromChip){text=text.trim();if(!text)return;add(esc(text),'me');
+  const id=CHIP[text];reply(id?KB.find(x=>x.id===id):match(text),fromChip)}
+function toggle(v){open=v??!open;document.getElementById('csPanel').classList.toggle('on',open);document.getElementById('csFab').classList.toggle('on',open);
+  document.getElementById('csFab').setAttribute('aria-expanded',open);
+  if(open&&!booted){booted=true;add(`Halo${S.me?.name?', '+esc(S.me.name.split(' ')[0]):''}! Aku bot Customer Service ReUse 🤖<br>Mau tanya apa? Pilih topik di bawah atau ketik pertanyaanmu.`,'bot');chips(START)}
+  if(open)setTimeout(()=>document.getElementById('csI').focus({preventScroll:true}),250)}
+document.body.insertAdjacentHTML('beforeend',`
+ <button class="csfab" id="csFab" aria-label="Customer service" aria-expanded="false" hidden>${svg('headset')}<span class="csx">${svg('x')}</span></button>
+ <div class="cspanel" id="csPanel" role="dialog" aria-label="Customer service ReUse">
+  <div class="cshead"><span class="csav">${svg('headset')}</span><div><b>CS ReUse</b><small><i></i>Bot · selalu online</small></div><button class="ibtn" id="csClose" aria-label="Tutup">${svg('x')}</button></div>
+  <div class="csbody" id="csBody"></div>
+  <div class="cschips" id="csChips"></div>
+  <form class="csform" id="csF"><input class="field" id="csI" maxlength="200" placeholder="Tulis pertanyaan…" autocomplete="off"><button class="btn sendb" aria-label="Kirim">${svg('send')}</button></form>
+ </div>`);
+document.getElementById('csFab').onclick=()=>toggle();
+document.getElementById('csClose').onclick=()=>toggle(false);
+document.getElementById('csF').onsubmit=e=>{e.preventDefault();const i=document.getElementById('csI');ask(i.value);i.value=''};
+document.getElementById('csChips').onclick=e=>{const b=e.target.closest('button');if(b)ask(b.textContent,true)};
+box().onclick=e=>{const b=e.target.closest('[data-go-tab]');if(b){toggle(false);go(b.dataset.goTab)}};
+// Tombol hanya tampil di layar utama (beranda, cari, chat, profil)
+window.csSync=id=>{const show=['home','search','chats','profile'].includes(id);document.getElementById('csFab').hidden=!show;if(!show&&open)toggle(false)};
+window.csSync(typeof cur!=='undefined'?cur:'');
+}
 
 /* ---------- Boot ---------- */
 hydrate(document);

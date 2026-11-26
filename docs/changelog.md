@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-26 · Customer service (bot)
+- Tombol bulat CS (ikon headset) di kanan bawah beranda, cari, chat, dan profil. Membuka jendela chat dengan bot.
+- Bot FAQ berjalan di browser (tanpa server/API): mencocokkan kata kunci untuk ±20 topik (posting, biaya & QRIS, Sundul, COD & tips aman, chat & tanda dibaca, tandai selesai, rating, komplain, hapus barang, barang tidak muncul, akun, kampus, dll.).
+- Jawaban memakai data asli aplikasi (biaya posting/sundul, mode bayar otomatis, titik COD kampus pengguna) dan punya tombol pintas (mis. "Posting sekarang") serta saran topik lanjutan.
+- Pertanyaan yang tidak dikenali diarahkan ke komplain (ditangani admin).
+
 ## 2026-11-26 · Konfirmasi bayar otomatis
 - Migrasi 013: setelan `pay_auto` (default aktif). Penjual cukup scan QRIS lalu menekan "Saya sudah bayar"; biaya posting dan sundul langsung disetujui tanpa bukti dan tanpa verifikasi admin.
 - Admin bisa mematikannya di Panel admin → Bayar ("Konfirmasi otomatis") untuk kembali ke alur upload bukti + verifikasi manual.
