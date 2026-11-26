@@ -35,6 +35,8 @@ insert into public.admins values ('eeeeeeee-0000-0000-0000-000000000005');
 
 -- uji awal tanpa biaya posting; biaya diuji di bagian akhir
 update public.settings set value = '0'::jsonb where key = 'post_fee';
+-- skenario bayar di bawah memakai verifikasi manual; mode otomatis diuji di bagian akhir
+update public.settings set value = 'false'::jsonb where key = 'pay_auto';
 
 \set A '''aaaaaaaa-0000-0000-0000-000000000001'''
 \set B '''bbbbbbbb-0000-0000-0000-000000000002'''
@@ -191,6 +193,25 @@ select pg_temp.uji('Komplain: admin selesaikan dengan catatan', :Z, 'admin@unpad
 select pg_temp.uji('Komplain: B melihat jawaban admin', :B, 'b@mail.unpad.ac.id', $q$select * from reports where status='resolved' and admin_note is not null$q$, 'rows:1');
 select pg_temp.uji('Komplain: setelah selesai B bisa lapor lagi', :B, 'b@mail.unpad.ac.id', $q$insert into reports (reporter,target,item_id,reason) values ('bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','11111111-0000-0000-0000-000000000003','Lainnya')$q$, 'ok');
 select pg_temp.uji('Komplain: tidak ada yang bisa hapus laporan', :B, 'b@mail.unpad.ac.id', $q$delete from reports$q$, 'fail');
+
+-- Konfirmasi bayar otomatis
+update public.settings set value = '2000'::jsonb where key = 'sundul_fee';
+update public.settings set value = 'true'::jsonb where key = 'pay_auto';
+select pg_temp.uji('Otomatis: A posting barang baru (belum tampil)', :A, 'a@mail.unpad.ac.id', $q$insert into items (id,owner,campus,title,category,condition,mode,price,cod,photos) values ('11111111-0000-0000-0000-000000000005','aaaaaaaa-0000-0000-0000-000000000001','unpad','Setrika','Elektronik','Baik','Sell',30000,0,'{x}')$q$, 'ok');
+select pg_temp.uji('Otomatis: tersembunyi dari B sebelum bayar', :B, 'b@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000005'$q$, 'rows:0');
+select pg_temp.uji('Otomatis: A bayar tanpa bukti', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount) values ('11111111-0000-0000-0000-000000000005','aaaaaaaa-0000-0000-0000-000000000001',1)$q$, 'ok');
+select pg_temp.uji('Otomatis: langsung disetujui Rp2.000', :A, 'a@mail.unpad.ac.id', $q$select * from payments where item_id='11111111-0000-0000-0000-000000000005' and status='approved' and amount=2000 and note='Otomatis'$q$, 'rows:1');
+select pg_temp.uji('Otomatis: barang langsung tampil untuk B', :B, 'b@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000005'$q$, 'rows:1');
+select pg_temp.uji('Otomatis: tidak bisa bayar posting dua kali', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount) values ('11111111-0000-0000-0000-000000000005','aaaaaaaa-0000-0000-0000-000000000001',2000)$q$, 'fail');
+select pg_temp.uji('Otomatis: sundul langsung aktif', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,kind) values ('11111111-0000-0000-0000-000000000005','aaaaaaaa-0000-0000-0000-000000000001',2000,'sundul')$q$, 'ok');
+select pg_temp.uji('Otomatis: barang tersundul 24 jam', :B, 'b@mail.unpad.ac.id', $q$select * from items where id='11111111-0000-0000-0000-000000000005' and bumped_until > now()+interval '23 hours'$q$, 'rows:1');
+select pg_temp.uji('Otomatis: B tidak bisa bayar untuk barang A', :B, 'b@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,kind) values ('11111111-0000-0000-0000-000000000005','bbbbbbbb-0000-0000-0000-000000000002',2000,'sundul')$q$, 'fail');
+select pg_temp.uji('Otomatis: A tidak bisa ubah mode otomatis', :A, 'a@mail.unpad.ac.id', $q$update settings set value='true'::jsonb where key='pay_auto'$q$, 'fail');
+update public.settings set value = 'false'::jsonb where key = 'pay_auto';
+select pg_temp.uji('Manual lagi: A posting barang', :A, 'a@mail.unpad.ac.id', $q$insert into items (id,owner,campus,title,category,condition,mode,cod,photos) values ('11111111-0000-0000-0000-000000000006','aaaaaaaa-0000-0000-0000-000000000001','unpad','Gantungan','Lainnya','Baik','Donate',0,'{x}')$q$, 'ok');
+select pg_temp.uji('Manual lagi: bayar tanpa bukti ditolak', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount) values ('11111111-0000-0000-0000-000000000006','aaaaaaaa-0000-0000-0000-000000000001',2000)$q$, 'fail');
+select pg_temp.uji('Manual lagi: dengan bukti menunggu admin', :A, 'a@mail.unpad.ac.id', $q$insert into payments (item_id,owner,amount,proof_path) values ('11111111-0000-0000-0000-000000000006','aaaaaaaa-0000-0000-0000-000000000001',2000,'aaaaaaaa-0000-0000-0000-000000000001/m.jpg') returning 1$q$, 'ok');
+select pg_temp.uji('Manual lagi: status menunggu', :A, 'a@mail.unpad.ac.id', $q$select * from payments where item_id='11111111-0000-0000-0000-000000000006' and status='pending'$q$, 'rows:1');
 
 select no, status, skenario, harap, dapat from hasil order by no;
 select count(*) filter (where status='PASS') as lulus, count(*) as total from hasil;

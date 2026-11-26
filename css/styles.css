@@ -578,3 +578,11 @@ em.kind.post{background:var(--g1);color:var(--g8)}
 .rep .da{display:flex;gap:8px;margin-top:10px}
 .rep .da .btn{flex:1;height:38px;font-size:13px}
 .chips.sub{margin:0 0 6px;padding:0}
+
+/* ---------- Konfirmasi bayar otomatis ---------- */
+.paysteps{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:12.5px;color:var(--mut);margin:14px 2px 4px}
+.paysteps span{width:20px;height:20px;border-radius:50%;background:var(--g1);color:var(--g9);font-weight:700;font-size:11px;display:grid;place-items:center}
+.paysteps span:not(:first-child){margin-left:6px}
+.autochk{align-items:flex-start;margin:12px 0 4px;padding:10px 12px;border-radius:12px;background:var(--g0)}
+.autochk input{margin-top:3px}
+.autochk small{color:var(--mut);font-size:11.5px;line-height:1.4}

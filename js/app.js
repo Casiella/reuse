@@ -91,10 +91,10 @@ const campusOf=id=>CAMPUS.find(c=>c.id===id)||{id,n:id||'Kampus',s:id||'Kampus',
 const activeCampuses=()=>CAMPUS.filter(c=>c.active!==false||c.id===S.me?.campus);
 const codName=i=>i.codPlace||campusOf(i.campus).cod[i.cod]||'Titik COD';
 const PAY_BUCKET='payment-proofs';
-let FEE=0,FEE_SET=0,SFEE=0,SFEE_SET=0,QRIS=null,QRIS_NAME='ReUse',QRIS_PAYLOAD=null,QRIS_DEMO=false;
+let FEE=0,FEE_SET=0,SFEE=0,SFEE_SET=0,QRIS=null,QRIS_NAME='ReUse',QRIS_PAYLOAD=null,QRIS_DEMO=false,PAY_AUTO=false;
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=rej;document.head.appendChild(el)});
 async function loadSettings(){try{const {data}=await sb.from('settings').select('key,value');
-  (data||[]).forEach(r=>{if(r.key==='post_fee')FEE_SET=+r.value||0;if(r.key==='sundul_fee')SFEE_SET=+r.value||0;if(r.key==='qris_url')QRIS=r.value||null;if(r.key==='qris_name')QRIS_NAME=r.value||'ReUse';if(r.key==='qris_payload')QRIS_PAYLOAD=r.value||null;if(r.key==='qris_demo')QRIS_DEMO=r.value===true});
+  (data||[]).forEach(r=>{if(r.key==='post_fee')FEE_SET=+r.value||0;if(r.key==='sundul_fee')SFEE_SET=+r.value||0;if(r.key==='qris_url')QRIS=r.value||null;if(r.key==='qris_name')QRIS_NAME=r.value||'ReUse';if(r.key==='qris_payload')QRIS_PAYLOAD=r.value||null;if(r.key==='qris_demo')QRIS_DEMO=r.value===true;if(r.key==='pay_auto')PAY_AUTO=r.value===true});
   FEE=QRIS||QRIS_PAYLOAD?FEE_SET:0;SFEE=QRIS||QRIS_PAYLOAD?SFEE_SET:0}catch(_){}}
 async function loadCampuses(){try{const {data,error}=await sb.from('campuses').select('*').order('sort').order('name');
   if(!error&&data&&data.length)CAMPUS=data.map(c=>({id:c.id,n:c.name,s:c.short,loc:c.loc,dom:c.domain,cod:c.cod,area:c.areas||[],active:c.active,sort:c.sort}))}catch(_){}}
@@ -536,22 +536,30 @@ async function renderPay(id,kind){kind=kind||'post';payItem=id;payKind=kind;payP
     $('#payGo').onclick=()=>go('detail',{id});return}
   if(last&&last.status==='pending'){B.innerHTML=head+`<div class="paystate">${svg('qr')}<b>Bukti terkirim, menunggu verifikasi admin</b><p>Dikirim ${ago(Date.parse(last.created_at))} lalu · ${rp(last.amount)}. ${SD?'Barang otomatis naik ke atas 24 jam setelah disetujui.':'Barang otomatis tampil setelah disetujui.'}</p></div><button class="btn ghost" data-tab="home">Kembali ke beranda</button>`;return}
   B.innerHTML=head+(last&&last.status==='rejected'?`<div class="paystate bad"><b>Pembayaran sebelumnya ditolak</b><p>Alasan: ${esc((last.note||'Bukti tidak sesuai').replace(/[.\s]+$/,''))}. Silakan bayar lagi dan kirim ulang bukti.</p></div>`:'')+
-   `<div class="qrbox">${QRIS_DEMO?`<div class="demotag">Mode demo · QRIS contoh, tidak menerima uang sungguhan. Upload screenshot apa saja sebagai bukti.</div>`:''}<small>${SD?'Bayar sundul 24 jam':'Bayar biaya posting'}</small><div class="amt">${rp(AMT)}</div>
-     ${QRIS_PAYLOAD?`<img id="dynQr" alt="QRIS ${esc(QRIS_NAME)} nominal ${rp(AMT)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet. <b>Nominal ${rp(AMT)} sudah otomatis terisi</b>, tinggal konfirmasi bayar.</p>
+   `<div class="qrbox">${QRIS_DEMO?`<div class="demotag">Mode demo · QRIS contoh, tidak menerima uang sungguhan.${PAY_AUTO?' Langsung tekan “Saya sudah bayar”.':' Upload screenshot apa saja sebagai bukti.'}</div>`:''}<small>${SD?'Bayar sundul 24 jam':'Bayar biaya posting'}</small><div class="amt">${rp(AMT)}</div>
+     ${QRIS_PAYLOAD?`<img id="dynQr" alt="QRIS ${esc(QRIS_NAME)} nominal ${rp(AMT)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet. <b>Nominal ${rp(AMT)} sudah otomatis terisi</b>, tinggal konfirmasi bayar${PAY_AUTO?', lalu kembali ke sini':''}.</p>
        <a class="btn ghost" id="dynDl" download="QRIS-ReUse-${AMT}.png">Simpan gambar QRIS</a>`
      :QRIS?`<img src="${esc(QRIS)}" alt="QRIS ${esc(QRIS_NAME)}"><p>Scan QRIS a.n. <b>${esc(QRIS_NAME)}</b> dari m-banking atau e-wallet, lalu ketik nominal <b>${rp(AMT)}</b>.</p>
        <a class="btn ghost" href="${esc(QRIS)}" download="QRIS-ReUse">Simpan gambar QRIS</a>`
      :`<div class="qrnone">${svg('qr')}<span>QRIS belum dipasang admin. Coba lagi nanti.</span></div>`}</div>
-   <span class="lbl">Bukti pembayaran <small>(screenshot transaksi berhasil)</small></span>
-   <label class="proof" id="proofL"><input type="file" accept="image/*" id="proofI" hidden><span id="proofT">${svg('camera')}Upload screenshot bukti bayar</span></label>
+   ${PAY_AUTO?`<div class="paysteps"><span>1</span>Scan & bayar ${rp(AMT)}<span>2</span>Tekan tombol di bawah</div>`:`<span class="lbl">Bukti pembayaran <small>(screenshot transaksi berhasil)</small></span>
+   <label class="proof" id="proofL"><input type="file" accept="image/*" id="proofI" hidden><span id="proofT">${svg('camera')}Upload screenshot bukti bayar</span></label>`}
    <div class="err" id="payE"></div>
-   <button class="btn" id="paySend" ${QRIS||QRIS_PAYLOAD?'':'disabled'}>Kirim bukti bayar</button>`;
+   <button class="btn" id="paySend" ${QRIS||QRIS_PAYLOAD?'':'disabled'}>${PAY_AUTO?svg('check')+'Saya sudah bayar':'Kirim bukti bayar'}</button>`;
   if(QRIS_PAYLOAD){try{await loadScript('js/vendor/qrcode.js');const qr=qrcode(0,'M');qr.addData(window.QRIS.withAmount(QRIS_PAYLOAD,AMT));qr.make();
     const url=qr.createDataURL(8,4);$('#dynQr').src=url;$('#dynDl').href=url}catch(e){$('#payE').textContent='QRIS tidak bisa dibuat: '+e.message}}
-  $('#proofI').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  if($('#proofI'))$('#proofI').onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{payProof=await shrinkTo(f,1400);$('#proofT').innerHTML=`<img src="${payProof.url}" alt="">`;$('#payE').textContent=''}catch(_){$('#payE').textContent='Gagal membaca gambar.'}};
-  $('#paySend').onclick=async()=>{if(!payProof){$('#payE').textContent='Upload screenshot bukti bayar dulu.';return}
-    const btn=$('#paySend');btn.disabled=true;btn.textContent='Mengirim…';
+  const LBL=$('#paySend').innerHTML;
+  $('#paySend').onclick=async()=>{const btn=$('#paySend');
+    if(PAY_AUTO){btn.disabled=true;btn.textContent='Mengecek pembayaran…';
+      const {data:pd,error}=await sb.from('payments').insert({item_id:id,owner:S.uid,amount:AMT,kind}).select().single();
+      if(error){$('#payE').textContent=errMsg(error);btn.disabled=false;btn.innerHTML=LBL;return}
+      delete S.cache[id];
+      if(pd.status!=='approved'){toast('Pembayaran tercatat, menunggu verifikasi admin.');renderPay(id,kind);return}
+      toast(SD?'Pembayaran berhasil. Barangmu di urutan teratas 24 jam!':'Pembayaran berhasil. Barangmu sudah tampil!');go('detail',{id});return}
+    if(!payProof){$('#payE').textContent='Upload screenshot bukti bayar dulu.';return}
+    btn.disabled=true;btn.textContent='Mengirim…';
     const path=`${S.uid}/${kind}-${id}-${Date.now()}.jpg`;
     const up=await sb.storage.from(PAY_BUCKET).upload(path,payProof.blob,{contentType:'image/jpeg'});
     if(up.error){$('#payE').textContent=errMsg(up.error);btn.disabled=false;btn.textContent='Kirim bukti bayar';return}
@@ -710,7 +718,7 @@ function startRealtime(){refreshUnread();if(channel)return;
      toast(`Komplainmu ${RSTAT[r.status].toLowerCase()}${r.admin_note?': '+r.admin_note:''}`);if(cur==='profile')renderProfile()})
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'deals'},({new:d})=>onDeal(d,true))
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'deals'},({new:d})=>onDeal(d,false))
-   .on('postgres_changes',{event:'INSERT',schema:'public',table:'payments'},({new:p})=>{if(!S.admin||p.owner===S.uid)return;
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'payments'},({new:p})=>{if(!S.admin||p.owner===S.uid||p.status!=='pending')return;
      refreshPending();toast('Bukti bayar baru masuk. Buka Profil → Panel admin.');if(cur==='admin'&&admTab==='bayar')renderAdmin()})
    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'items'},({new:r,old:o})=>{
      if(r.taken_by===S.uid&&r.status==='done'&&r.owner!==S.uid){delete S.cache[r.id];$('#pfDot').hidden=false;
@@ -816,6 +824,7 @@ async function admPay(B){await loadSettings();
     <div><label class="lbl" for="stSFee">Biaya sundul (Rp)</label><input class="field" id="stSFee" inputmode="numeric" value="${SFEE_SET}"></div></div>
     <label class="lbl" for="stName">Nama di QRIS</label><input class="field" id="stName" maxlength="60" value="${esc(QRIS_NAME)}"></div></div>
     <label class="proof sm"><input type="file" accept="image/png,image/jpeg,image/webp" id="stQr" hidden><span id="stQrT">${svg('qr')}${QRIS?'Ganti gambar QRIS':'Upload gambar QRIS'}</span></label>
+    <label class="cfchk autochk"><input type="checkbox" id="stAuto" ${PAY_AUTO?'checked':''}> <span><b>Konfirmasi otomatis</b><br><small>Pembayaran langsung disetujui saat pengguna menekan “Saya sudah bayar”, tanpa bukti dan tanpa verifikasi admin.</small></span></label>
     ${QRIS_DEMO?`<div class="demotag">QRIS demo sedang aktif (tidak menerima uang). Upload QRIS asli untuk menerima pembayaran sungguhan.</div>`:''}<p class="muted">${QRIS_PAYLOAD?'Nominal otomatis aktif: pembeli tidak perlu mengetik nominal.':QRIS?'QRIS ini belum terbaca, jadi penjual harus mengetik nominal. Upload ulang gambar yang lebih jelas.':''} Isi 0 untuk menggratiskan posting atau sundul. Barang yang diposting admin selalu langsung tampil.</p>
     <div class="err" id="stE"></div><button class="btn" id="stSave">Simpan pengaturan</button></div>
    <h3 class="ah">Menunggu verifikasi (${(pend||[]).length})</h3>`+
@@ -824,8 +833,8 @@ async function admPay(B){await loadSettings();
      <div class="pinfo"><b>${p.kind==='sundul'?'<em class="kind">Sundul</em>':'<em class="kind post">Posting</em>'}${esc(p.items?.title||'Barang dihapus')}</b><small>${esc(p.owner_p?.name||'Mahasiswa')} · ${esc(campusOf(p.items?.campus).s)} · ${ago(Date.parse(p.created_at))} lalu</small>
       <div class="amt sm">${rp(p.amount)}</div>
       <div class="da"><button class="btn ghost" data-pdec="rejected">Tolak</button><button class="btn" data-pdec="approved">Setujui</button></div></div></div>`).join('')
-    :'<p class="muted">Tidak ada pembayaran yang menunggu.</p>')+
-   `<h3 class="ah">Riwayat</h3><div class="atable">${(done||[]).map(p=>`<div class="ar"><span>${p.kind==='sundul'?'<em class="kind">Sundul</em>':''}${esc(p.items?.title||'Barang dihapus')}<small style="display:block;color:var(--mut)">${esc(p.owner_p?.name||'')}${p.note?' · '+esc(p.note):''}</small></span><span>${rp(p.amount)}</span><span><em class="pst ${p.status}">${p.status==='approved'?'Setuju':'Tolak'}</em></span></div>`).join('')||'<div class="ar"><span>Belum ada</span></div>'}</div>`;
+    :`<p class="muted">${PAY_AUTO?'Konfirmasi otomatis aktif, jadi tidak ada yang perlu diverifikasi.':'Tidak ada pembayaran yang menunggu.'}</p>`)+
+   `<h3 class="ah">Riwayat</h3><div class="atable">${(done||[]).map(p=>`<div class="ar"><span>${p.kind==='sundul'?'<em class="kind">Sundul</em>':''}${esc(p.items?.title||'Barang dihapus')}<small style="display:block;color:var(--mut)">${esc(p.owner_p?.name||'')}${p.note&&p.note!=='Otomatis'?' · '+esc(p.note):''}</small></span><span>${rp(p.amount)}</span><span><em class="pst ${p.status}">${p.status==='approved'?(p.note==='Otomatis'?'Otomatis':'Setuju'):'Tolak'}</em></span></div>`).join('')||'<div class="ar"><span>Belum ada</span></div>'}</div>`;
   let newQr=null;
   let newPayload=null;
   $('#stQr').onchange=async e=>{const f=e.target.files[0],E=$('#stE');if(!f)return;if(f.size>3*1024*1024){E.textContent='Maksimal 3 MB.';return}
@@ -842,7 +851,7 @@ async function admPay(B){await loadSettings();
       const up=await sb.storage.from('site').upload(path,newQr,{contentType:newQr.type});
       if(up.error){E.textContent=errMsg(up.error);$('#stSave').disabled=false;return}
       url=sb.storage.from('site').getPublicUrl(path).data.publicUrl}
-    for(const [key,value] of [['post_fee',fee],['sundul_fee',sfee],['qris_name',name],['qris_url',url],...(newPayload?[['qris_payload',newPayload],['qris_demo',false]]:[])]){
+    for(const [key,value] of [['post_fee',fee],['sundul_fee',sfee],['pay_auto',$('#stAuto').checked],['qris_name',name],['qris_url',url],...(newPayload?[['qris_payload',newPayload],['qris_demo',false]]:[])]){
       const {error}=await sb.from('settings').update({value}).eq('key',key);
       if(error){E.textContent=errMsg(error);$('#stSave').disabled=false;return}}
     toast('Pengaturan pembayaran disimpan');renderAdmin()};

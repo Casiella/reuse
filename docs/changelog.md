@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-26 · Konfirmasi bayar otomatis
+- Migrasi 013: setelan `pay_auto` (default aktif). Penjual cukup scan QRIS lalu menekan "Saya sudah bayar"; biaya posting dan sundul langsung disetujui tanpa bukti dan tanpa verifikasi admin.
+- Admin bisa mematikannya di Panel admin → Bayar ("Konfirmasi otomatis") untuk kembali ke alur upload bukti + verifikasi manual.
+- Uji RLS: 138 skenario.
+
 ## 2026-11-26 · Komplain & tanda dibaca di chat
 - Komplain (migrasi 012): ikon bendera di halaman barang dan di chat. Pilih alasan (Penipuan, Barang tidak sesuai, Tidak datang saat COD, Kata-kata kasar, Konten tidak pantas, Lainnya) + cerita singkat.
 - Komplain hanya terlihat oleh pelapor dan admin; terlapor tidak tahu siapa pelapornya. Satu komplain aktif per orang & barang.
